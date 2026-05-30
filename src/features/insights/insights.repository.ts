@@ -2,7 +2,7 @@ import { db } from '@/db';
 import { aiMatchInsights } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { generateObject } from 'ai';
-import { openai } from '@ai-sdk/openai';
+import { model } from '@/ai';
 import { z } from 'zod';
 import { matchesRepository } from '@/features/matches/matches.repository';
 
@@ -33,7 +33,7 @@ export const insightsRepository = {
     if (!match) throw new Error('Match not found');
 
     const { object: aiResponse } = await generateObject({
-      model: openai('gpt-4o-mini'),
+      model,
       schema: insightSchema,
       prompt: `Analyze the upcoming World Cup 2026 match between ${match.homeTeam} and ${match.awayTeam}.
                Venue: ${match.venue}. Group: ${match.group ?? 'Knockout'}.

@@ -1,4 +1,4 @@
-import { createRootRouteWithContext, HeadContent, Link, Outlet, Scripts, useRouter } from '@tanstack/react-router';
+import { createRootRouteWithContext, HeadContent, Link, Outlet, Scripts, ScrollRestoration, useRouter } from '@tanstack/react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { authClient } from '@/auth/auth.client';

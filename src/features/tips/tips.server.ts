@@ -1,4 +1,5 @@
 import { createServerFn } from '@tanstack/react-start';
+import { getRequest } from '@tanstack/react-start/server';
 import { z } from 'zod';
 import { auth } from '@/auth/auth';
 import { tipsRepository } from '@/features/tips/tips.repository';
@@ -12,8 +13,8 @@ const submitTipSchema = z.object({
 
 export const submitTipFn = createServerFn({ method: 'POST' })
   .inputValidator((data: unknown) => submitTipSchema.parse(data))
-  .handler(async ({ data, context }) => {
-    const session = await auth.api.getSession({ headers: context.request.headers });
+  .handler(async ({ data }) => {
+    const session = await auth.api.getSession({ headers: getRequest().headers });
     if (!session?.user) throw new Error('Unauthorized');
 
     const match = await matchesRepository.getById(data.matchId);
@@ -30,8 +31,8 @@ export const submitTipFn = createServerFn({ method: 'POST' })
 
 export const getUserTipFn = createServerFn({ method: 'GET' })
   .inputValidator((matchId: string) => matchId)
-  .handler(async ({ data: matchId, context }) => {
-    const session = await auth.api.getSession({ headers: context.request.headers });
+  .handler(async ({ data: matchId }) => {
+    const session = await auth.api.getSession({ headers: getRequest().headers });
     return {
       isAuthenticated: !!session?.user,
       tip: session?.user

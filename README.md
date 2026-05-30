@@ -7,7 +7,7 @@ FIFA World Cup 2026 tipping competition. Predict match scores, earn points, top 
 - **Fixture browser** — all 104 World Cup 2026 matches with group, venue, and date
 - **Score tipping** — predict home/away scores before each match kicks off
 - **Points leaderboard** — 3 pts exact score, 1 pt correct outcome, 0 pts wrong
-- **AI Co-Pilot** — per-match tactical analysis and win probabilities (GPT-4o-mini, DB-cached)
+- **AI Co-Pilot** — per-match tactical analysis and win probabilities (Gemini by default, DB-cached, provider configurable)
 - **Auth** — email/password + GitHub and Google OAuth via Better Auth
 - **Automated scoring** — cron endpoint scores completed matches and aggregates user points
 
@@ -19,7 +19,7 @@ FIFA World Cup 2026 tipping competition. Predict match scores, earn points, top 
 | Auth | Better Auth (`tanstackStartCookies` plugin) |
 | Database | Neon Serverless Postgres + Drizzle ORM |
 | State/Cache | TanStack Query |
-| AI | Vercel AI SDK + OpenAI (`gpt-4o-mini`) |
+| AI | Vercel AI SDK + Google Gemini (configurable via `AI_PROVIDER`) |
 | Styling | Tailwind CSS |
 | Testing | Vitest (unit) + Playwright (E2E) |
 
@@ -29,7 +29,7 @@ FIFA World Cup 2026 tipping competition. Predict match scores, earn points, top 
 
 - Node.js 20+
 - A [Neon](https://neon.tech) Postgres database
-- An [OpenAI](https://platform.openai.com) API key
+- A [Google AI](https://aistudio.google.com/apikey) API key (or OpenAI — see `AI_PROVIDER` in `.env.example`)
 
 ### Setup
 
@@ -39,7 +39,7 @@ npm install
 
 # Configure environment
 cp .env.example .env
-# Fill in DATABASE_URL, BETTER_AUTH_SECRET, BETTER_AUTH_URL, OPENAI_API_KEY
+# Fill in DATABASE_URL, BETTER_AUTH_SECRET, BETTER_AUTH_URL, GOOGLE_GENERATIVE_AI_API_KEY
 
 # Push schema to database
 npm run db:push
@@ -132,6 +132,8 @@ curl -X POST http://localhost:3000/api/cron/score \
 
 ```
 src/
+  ai/
+    index.ts             # AI model factory (provider/model from AI_PROVIDER/AI_MODEL env vars)
   auth/
     auth.ts              # Better Auth config (email + GitHub + Google)
     auth.client.ts       # createAuthClient() for React hooks
@@ -158,6 +160,7 @@ src/
   components/
     tip-form.tsx         # Auth-gated tip form
     route-error.tsx      # Route-level error boundary UI
+  vite-env.d.ts          # Vite client type reference
 scripts/
   seed-dev.ts            # 72 group stage fixtures (real 2026 WC draw)
   seed-matches.ts        # Fetch fixtures from API-Football

@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { matchesQueryOptions } from '@/features/matches/matches.queries';
+import type { Match } from '@/features/matches/matches.repository';
 import { RouteError } from '@/components/route-error';
 
 export const Route = createFileRoute('/matches/')({
@@ -16,7 +17,7 @@ function MatchesComponent() {
     <div className="p-6 max-w-4xl mx-auto space-y-4">
       <h1 className="text-3xl font-bold">World Cup 2026 Fixtures</h1>
       <div className="grid gap-3">
-        {matches.map((match) => (
+        {matches.map((match: Match) => (
           <Link
             key={match.id}
             to="/matches/$matchId"

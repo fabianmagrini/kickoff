@@ -8,7 +8,7 @@ A production-grade sports tipping application for FIFA World Cup 2026.
 - **Auth**: Better Auth with `tanstackStartCookies` plugin
 - **Database**: Neon Serverless Postgres via Drizzle ORM
 - **State/Cache**: TanStack Query
-- **AI**: Vercel AI SDK (`ai` + `@ai-sdk/openai`) with DB caching
+- **AI**: Vercel AI SDK (`ai` + `@ai-sdk/google` / `@ai-sdk/openai`) with DB caching; provider configurable via `AI_PROVIDER` env var (default: `google`)
 - **Styling**: Tailwind CSS
 
 ## Architecture: Deep Modules
@@ -45,7 +45,9 @@ export const getWidgetsFn = createServerFn({ method: 'GET' })
 Auth checks belong in the server fn layer, not in repositories.
 
 ```ts
-const session = await auth.api.getSession({ headers: context.request.headers });
+import { getRequest } from '@tanstack/react-start/server';
+
+const session = await auth.api.getSession({ headers: getRequest().headers });
 if (!session?.user) throw new Error('Unauthorized');
 ```
 
@@ -72,7 +74,7 @@ Logic lives in `src/features/tips/scoring.ts` → `calculatePoints(pH, pA, aH, a
 
 ## Environment Variables
 
-See `.env.example`. Required: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `OPENAI_API_KEY`, `CRON_SECRET`. OAuth vars (`GITHUB_CLIENT_ID/SECRET`, `GOOGLE_CLIENT_ID/SECRET`) are optional — omit to disable those providers.
+See `.env.example`. Required: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `CRON_SECRET`. AI provider key required: `GOOGLE_GENERATIVE_AI_API_KEY` (default) or `OPENAI_API_KEY`. Control the model with `AI_PROVIDER` (`google`|`openai`) and `AI_MODEL`. OAuth vars (`GITHUB_CLIENT_ID/SECRET`, `GOOGLE_CLIENT_ID/SECRET`) are optional — omit to disable those providers.
 
 ## Commands
 
@@ -96,6 +98,8 @@ npm run db:seed        # Seed fixtures from API-Football (requires API_FOOTBALL_
 
 ```
 src/
+  ai/
+    index.ts                         # AI model factory (AI_PROVIDER / AI_MODEL env vars)
   auth/
     auth.ts                          # Better Auth config
     auth.client.ts                   # createAuthClient() for React hooks
@@ -140,6 +144,7 @@ src/
     route-error.tsx                  # Shared error boundary UI (used by all loader routes)
   styles/
     app.css                          # Tailwind entry
+  vite-env.d.ts                      # Vite client type reference (*.css?url etc.)
   test/
     setup.ts                         # Vitest global setup
   router.tsx                         # Router config
