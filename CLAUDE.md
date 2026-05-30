@@ -1,0 +1,155 @@
+# Kickoff — World Cup 2026 Tipping App
+
+A production-grade sports tipping application for FIFA World Cup 2026.
+
+## Tech Stack
+
+- **Framework**: TanStack Start (React 19, SSR, file-based routing, server functions)
+- **Auth**: Better Auth with `tanstackStartCookies` plugin
+- **Database**: Neon Serverless Postgres via Drizzle ORM
+- **State/Cache**: TanStack Query
+- **AI**: Vercel AI SDK (`ai` + `@ai-sdk/openai`) with DB caching
+- **Styling**: Tailwind CSS
+
+## Architecture: Deep Modules
+
+The codebase is organised around **deep modules** — each feature module exposes a simple interface that hides significant implementation complexity. There are two layers per feature:
+
+- **`*.repository.ts`** — deep module. Owns all DB queries (and LLM calls for insights). Import `db` and schema only here, never in routes.
+- **`*.server.ts`** — thin transport. Wraps repository methods as `createServerFn` calls. Auth checks live here, not in repositories.
+- **`routes/`** — thin view layer. Calls feature server functions; renders data. No DB imports, no business logic.
+
+### Adding a new feature
+
+1. Create `src/features/<name>/<name>.repository.ts` with a named object exposing async methods.
+2. Create `src/features/<name>/<name>.server.ts` wrapping each method as a server function.
+3. Import the server function in the relevant route — one import, one call.
+
+## Key Patterns
+
+### Server Functions
+Use `createServerFn` from `@tanstack/react-start` — never create manual API routes.
+
+```ts
+// repository (deep — hides complexity)
+export const widgetRepository = {
+  getAll: async (): Promise<Widget[]> => db.select().from(widgets),
+};
+
+// server fn (thin — transport only)
+export const getWidgetsFn = createServerFn({ method: 'GET' })
+  .handler(() => widgetRepository.getAll());
+```
+
+### Auth
+Auth checks belong in the server fn layer, not in repositories.
+
+```ts
+const session = await auth.api.getSession({ headers: context.request.headers });
+if (!session?.user) throw new Error('Unauthorized');
+```
+
+### AI Insights — cache-first
+`insightsRepository.getOrGenerate(matchId)` hides: cache lookup → match fetch → LLM call → DB write. Callers never see this complexity.
+
+### Cross-feature dependencies
+Repositories may depend on other repositories (e.g. `insightsRepository` calls `matchesRepository.getById`). Server functions must not call other server functions.
+
+## Database Schema
+
+- `matches` — fixtures (48 teams, 12 groups A–L, plus knockout rounds)
+- `user` — Better Auth users + aggregated `points`
+- `tips` — user score predictions per match
+- `ai_match_insights` — cached LLM analysis per match
+
+## Scoring Rules
+
+- **3 pts** — exact score prediction
+- **1 pt** — correct winner/draw, wrong score
+- **0 pts** — incorrect outcome
+
+Logic lives in `src/features/tips/scoring.ts` → `calculatePoints(pH, pA, aH, aA)`.
+
+## Environment Variables
+
+See `.env.example`. Required: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `OPENAI_API_KEY`, `CRON_SECRET`. OAuth vars (`GITHUB_CLIENT_ID/SECRET`, `GOOGLE_CLIENT_ID/SECRET`) are optional — omit to disable those providers.
+
+## Commands
+
+```bash
+npm run dev            # Start dev server
+npm run build          # Production build
+npm run start          # Start production server
+npm run test           # Run unit tests (Vitest)
+npm run test:watch     # Watch mode
+npm run test:e2e       # Run E2E tests (Playwright, requires dev server)
+npm run test:e2e:ui    # Playwright UI mode
+npm run db:push        # Push schema to DB (development)
+npm run db:generate    # Generate migrations
+npm run db:migrate     # Run migrations
+npm run db:studio      # Open Drizzle Studio
+npm run db:seed:dev    # Seed 72 group stage fixtures (dev — no API key needed)
+npm run db:seed        # Seed fixtures from API-Football (requires API_FOOTBALL_KEY)
+```
+
+## Project Structure
+
+```
+src/
+  auth/
+    auth.ts                          # Better Auth config
+    auth.client.ts                   # createAuthClient() for React hooks
+  db/
+    index.ts                         # Drizzle client (neon-http driver)
+    schema.ts                        # All table definitions
+  features/
+    matches/
+      matches.repository.ts          # DEEP: getAll(), getById()
+      matches.server.ts              # thin: getMatchesFn, getMatchByIdFn
+      matches.queries.ts             # matchQueryOptions, matchesQueryOptions
+    tips/
+      tips.repository.ts             # DEEP: submit(), getUserTip()
+      tips.server.ts                 # thin: submitTipFn, getUserTipFn (+ auth checks)
+      tips.queries.ts                # userTipQueryOptions (staleTime: 0)
+      scoring.ts                     # DEEP: calculatePoints()
+      scoring.test.ts                # unit tests (co-located)
+    insights/
+      insights.repository.ts         # DEEP: getCached(), getOrGenerate()
+      insights.server.ts             # thin: getCachedInsightFn, getOrGenerateInsightFn
+      insights.queries.ts            # insightQueryOptions
+    leaderboard/
+      leaderboard.repository.ts      # DEEP: getTopN()
+      leaderboard.server.ts          # thin: getLeaderboardFn
+      leaderboard.queries.ts         # leaderboardQueryOptions (refetchInterval: 60s)
+    scoring/
+      scoring.service.ts             # scoreCompletedMatches() — batch scoring logic
+      scoring.service.test.ts        # unit tests (co-located)
+  routes/
+    __root.tsx                       # Root layout + Navbar with auth state
+    index.tsx                        # Dashboard
+    login.tsx                        # Sign in / Sign up combined page
+    leaderboard.tsx                  # Top 50 users by points
+    matches/
+      index.tsx                      # Fixture list
+      $matchId.tsx                   # Match detail + tip form + AI co-pilot
+    api/
+      auth/$.ts                      # Better Auth catch-all
+      cron/score.ts                  # POST /api/cron/score — secured scoring trigger
+  components/
+    tip-form.tsx                     # Auth-gated tip submission form (all states)
+    route-error.tsx                  # Shared error boundary UI (used by all loader routes)
+  styles/
+    app.css                          # Tailwind entry
+  test/
+    setup.ts                         # Vitest global setup
+  router.tsx                         # Router config
+  entry-client.tsx                   # Client entry
+  entry-server.tsx                   # Server entry
+scripts/
+  seed-dev.ts                        # 72 group stage fixtures (real 2026 WC draw)
+  seed-matches.ts                    # API-Football production fetch script
+```
+
+## Not Yet Implemented
+
+- Social features (private leagues, invite codes)
