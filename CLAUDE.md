@@ -188,4 +188,4 @@ Document the *why*, not the *what*:
 
 ## Backlog
 
-See [backlog.md](./backlog.md) for the full prioritised list of outstanding features, testing gaps, and infrastructure work.
+See [docs/backlog.md](./docs/backlog.md) for the full prioritised list of outstanding features, testing gaps, and infrastructure work.
