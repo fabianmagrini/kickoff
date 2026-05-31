@@ -6,5 +6,7 @@ import { profileRepository } from './profile.repository';
 export const getProfileFn = createServerFn({ method: 'GET' }).handler(async () => {
   const session = await auth.api.getSession({ headers: getRequest().headers });
   if (!session?.user) throw new Error('Unauthorized');
-  return profileRepository.get(session.user.id);
+  const data = await profileRepository.get(session.user.id);
+  if (!data) throw new Error('Profile not found');
+  return data;
 });

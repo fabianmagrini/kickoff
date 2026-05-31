@@ -8,8 +8,11 @@ export const Route = createFileRoute('/profile')({
   loader: async ({ context: { queryClient } }) => {
     try {
       return await queryClient.ensureQueryData(profileQueryOptions);
-    } catch {
-      throw redirect({ to: '/login' });
+    } catch (err) {
+      if (err instanceof Error && err.message === 'Unauthorized') {
+        throw redirect({ to: '/login' });
+      }
+      throw err;
     }
   },
   errorComponent: ({ error, reset }) => <RouteError error={error} reset={reset} />,
@@ -121,15 +124,15 @@ function TipRow({ tip }: { tip: ProfileTip }) {
         <p className="text-xs text-muted-foreground">
           Tip: {tip.predictedHomeScore}–{tip.predictedAwayScore}
         </p>
-        {tip.matchStatus === 'completed' && tip.homeScore !== null && (
+        {tip.matchStatus === 'completed' && tip.homeScore !== null && tip.awayScore !== null && (
           <p className="text-xs text-muted-foreground">
             Result: {tip.homeScore}–{tip.awayScore}
           </p>
         )}
       </div>
 
-      {/* Points badge */}
-      {tip.matchStatus === 'completed' && (
+      {/* Points badge — only once scoring has run (scoredAt set by cron) */}
+      {tip.matchStatus === 'completed' && tip.scoredAt !== null && (
         <PointsBadge points={tip.pointsEarned} />
       )}
     </Link>

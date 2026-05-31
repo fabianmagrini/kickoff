@@ -12,6 +12,7 @@ export type ProfileTip = {
   predictedHomeScore: number;
   predictedAwayScore: number;
   pointsEarned: number;
+  scoredAt: Date | null;
   matchStatus: string;
   homeScore: number | null;
   awayScore: number | null;
@@ -52,6 +53,7 @@ export const profileRepository = {
           predictedHomeScore: tips.predictedHomeScore,
           predictedAwayScore: tips.predictedAwayScore,
           pointsEarned: tips.pointsEarned,
+          scoredAt: tips.scoredAt,
           matchStatus: matches.status,
           homeScore: matches.homeScore,
           awayScore: matches.awayScore,

@@ -3,9 +3,12 @@ import { test, expect, type Page } from '@playwright/test';
 // React 18 attaches __reactFiber$* properties to DOM nodes when hydrated.
 // Wait for this before interacting with client-side state.
 async function waitForReactHydration(page: Page) {
+  // React attaches __react* internal properties to DOM nodes when hydrated.
+  // Using the broader `__react` prefix is more resilient across React versions
+  // than pinning to `__reactFiber` (which is an implementation detail).
   await page.waitForFunction(() => {
     const el = document.querySelector('h1') ?? document.body;
-    return Object.keys(el).some(key => key.startsWith('__reactFiber'));
+    return Object.keys(el).some(key => key.startsWith('__react'));
   }, { timeout: 10_000 });
 }
 
@@ -62,6 +65,8 @@ test('invalid credentials keep the user on the login page', async ({ page }) => 
   await page.getByRole('button', { name: 'Sign in' }).click();
   await expect(page).toHaveURL('/login');
   await expect(page.getByRole('button', { name: 'Sign in' })).toBeEnabled({ timeout: 10_000 });
+  // The error message surfaced from the mocked 401 response must be visible
+  await expect(page.locator('form p')).toBeVisible();
 });
 
 test('back link returns to home', async ({ page }) => {

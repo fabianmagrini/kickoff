@@ -9,10 +9,10 @@ test('app brand is visible in the navigation', async ({ page }) => {
 
 test('unauthenticated home page shows a sign-in call to action', async ({ page }) => {
   await page.goto('/');
-  // Guest h1 is "Kickoff"; authenticated h1 is "Welcome back, <name>"
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-  // Unauthenticated dashboard always renders a "Sign in" link
-  await expect(page.getByRole('link', { name: /sign in/i }).first()).toBeVisible();
+  // "Join the competition" is unique to the UnauthenticatedDashboard CTA block,
+  // not the navbar — this assertion fails if the CTA block itself is broken.
+  await expect(page.getByText('Join the competition')).toBeVisible();
 });
 
 test('navbar has links to fixtures and leaderboard', async ({ page }) => {

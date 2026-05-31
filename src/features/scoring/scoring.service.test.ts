@@ -115,12 +115,15 @@ describe('scoreCompletedMatches', () => {
       { id: 't1', userId: 'u1', matchId: 'm1', predictedHomeScore: 1, predictedAwayScore: 0, pointsEarned: 0 },
       { id: 't2', userId: 'u2', matchId: 'm1', predictedHomeScore: 0, predictedAwayScore: 1, pointsEarned: 0 },
     ]);
-    // two users → two sum queries
-    selectQueue.push([{ total: '3' }]);
-    selectQueue.push([{ total: '0' }]);
+    // Use the same total for both users so Set iteration order doesn't affect correctness.
+    // Per-user point accuracy is covered by the single-user happy-path tests.
+    selectQueue.push([{ total: '1' }]);
+    selectQueue.push([{ total: '1' }]);
 
     const result = await scoreCompletedMatches();
 
     expect(result).toEqual({ tipsScored: 2, matchesProcessed: 1 });
+    // 2 tip updates + 2 user-total updates = 4 set() calls
+    expect(updateBuilder.set).toHaveBeenCalledTimes(4);
   });
 });
