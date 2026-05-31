@@ -182,9 +182,25 @@ When adding a new feature, add tests before marking the task done. Aim for each 
 ### Documentation
 Document the *why*, not the *what*:
 
-- **CLAUDE.md** — update the Project Structure tree and the "Not Yet Implemented" list when features are added or completed.
+- **CLAUDE.md** — update the Project Structure tree and link to the backlog when features are added or completed.
 - **Code comments** — only when the reason behind a decision is non-obvious (a workaround, a hidden constraint, a schema quirk). Do not describe what the code does; well-named identifiers do that.
 - **Server function modules** — add a one-line JSDoc on exported server functions that have auth requirements or non-obvious side effects.
+
+### Architecture Decision Records
+Write an ADR in `docs/adr/` whenever a decision meets any of these criteria:
+
+- A library or framework was chosen over meaningful alternatives
+- An architectural pattern was adopted that constrains how future code must be written
+- A workaround was introduced for a third-party limitation (the *why* would otherwise only live in a commit message)
+- A previously accepted decision is being reversed or superseded
+
+**Process:**
+1. Copy the template from `docs/adr/README.md` into `docs/adr/NNNN-short-title.md`.
+2. Fill in Context (what problem led here), Decision (what was chosen and why), and Consequences (trade-offs accepted).
+3. Add a row to the index table in `docs/adr/README.md`.
+4. If the ADR supersedes an existing one, update the old ADR's status line.
+
+An ADR does not need to be long. Two or three sentences per section is enough if the reasoning is clear. The goal is to make the *why* recoverable without reading git history.
 
 ## Backlog
 
