@@ -186,8 +186,6 @@ Document the *why*, not the *what*:
 - **Code comments** — only when the reason behind a decision is non-obvious (a workaround, a hidden constraint, a schema quirk). Do not describe what the code does; well-named identifiers do that.
 - **Server function modules** — add a one-line JSDoc on exported server functions that have auth requirements or non-obvious side effects.
 
-## Not Yet Implemented
+## Backlog
 
-- Social features (private leagues, invite codes)
-- Match filtering/grouping on the fixture list (by stage, by status)
-- Optimistic updates on tip submission
+See [backlog.md](./backlog.md) for the full prioritised list of outstanding features, testing gaps, and infrastructure work.
