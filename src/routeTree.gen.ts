@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LeaderboardRouteImport } from './routes/leaderboard'
 import { Route as IndexRouteImport } from './routes/index'
@@ -17,6 +18,11 @@ import { Route as MatchesMatchIdRouteImport } from './routes/matches/$matchId'
 import { Route as ApiCronScoreRouteImport } from './routes/api/cron/score'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -57,6 +63,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/leaderboard': typeof LeaderboardRoute
   '/login': typeof LoginRoute
+  '/profile': typeof ProfileRoute
   '/matches/$matchId': typeof MatchesMatchIdRoute
   '/matches/': typeof MatchesIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -66,6 +73,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/leaderboard': typeof LeaderboardRoute
   '/login': typeof LoginRoute
+  '/profile': typeof ProfileRoute
   '/matches/$matchId': typeof MatchesMatchIdRoute
   '/matches': typeof MatchesIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -76,6 +84,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/leaderboard': typeof LeaderboardRoute
   '/login': typeof LoginRoute
+  '/profile': typeof ProfileRoute
   '/matches/$matchId': typeof MatchesMatchIdRoute
   '/matches/': typeof MatchesIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -87,6 +96,7 @@ export interface FileRouteTypes {
     | '/'
     | '/leaderboard'
     | '/login'
+    | '/profile'
     | '/matches/$matchId'
     | '/matches/'
     | '/api/auth/$'
@@ -96,6 +106,7 @@ export interface FileRouteTypes {
     | '/'
     | '/leaderboard'
     | '/login'
+    | '/profile'
     | '/matches/$matchId'
     | '/matches'
     | '/api/auth/$'
@@ -105,6 +116,7 @@ export interface FileRouteTypes {
     | '/'
     | '/leaderboard'
     | '/login'
+    | '/profile'
     | '/matches/$matchId'
     | '/matches/'
     | '/api/auth/$'
@@ -115,6 +127,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LeaderboardRoute: typeof LeaderboardRoute
   LoginRoute: typeof LoginRoute
+  ProfileRoute: typeof ProfileRoute
   MatchesMatchIdRoute: typeof MatchesMatchIdRoute
   MatchesIndexRoute: typeof MatchesIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
@@ -123,6 +136,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -179,6 +199,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LeaderboardRoute: LeaderboardRoute,
   LoginRoute: LoginRoute,
+  ProfileRoute: ProfileRoute,
   MatchesMatchIdRoute: MatchesMatchIdRoute,
   MatchesIndexRoute: MatchesIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,

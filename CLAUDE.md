@@ -155,6 +155,25 @@ scripts/
   seed-matches.ts                    # API-Football production fetch script
 ```
 
+## Testing & Documentation Standards
+
+### Testing
+New code must be covered by tests at the appropriate level:
+
+- **Repository methods** — unit test with mocked DB (see `scoring.service.test.ts` for the `selectQueue` pattern). Cover the happy path, the null/empty case, and any error guard.
+- **Server functions** — auth checks must be tested: unauthenticated → throws `'Unauthorized'`; authenticated + missing resource → throws, not null.
+- **Routes / UI behaviour** — E2E tests in `e2e/`. At minimum: unauthenticated redirect, page heading renders, key interactive states.
+- **Scoring / business logic** — unit test every branch in `src/features/tips/scoring.ts` and co-located `*.test.ts` files.
+
+When adding a new feature, add tests before marking the task done. Aim for each file in `src/features/` to have a corresponding `*.test.ts` sibling or an E2E spec that covers its public contract.
+
+### Documentation
+Document the *why*, not the *what*:
+
+- **CLAUDE.md** — update the Project Structure tree and the "Not Yet Implemented" list when features are added or completed.
+- **Code comments** — only when the reason behind a decision is non-obvious (a workaround, a hidden constraint, a schema quirk). Do not describe what the code does; well-named identifiers do that.
+- **Server function modules** — add a one-line JSDoc on exported server functions that have auth requirements or non-obvious side effects.
+
 ## Not Yet Implemented
 
 - Social features (private leagues, invite codes)
