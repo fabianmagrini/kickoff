@@ -123,15 +123,27 @@ src/
       insights.queries.ts            # insightQueryOptions
     leaderboard/
       leaderboard.repository.ts      # DEEP: getTopN()
+      leaderboard.repository.test.ts # unit tests (co-located)
       leaderboard.server.ts          # thin: getLeaderboardFn
       leaderboard.queries.ts         # leaderboardQueryOptions (refetchInterval: 60s)
     scoring/
       scoring.service.ts             # scoreCompletedMatches() — batch scoring logic
       scoring.service.test.ts        # unit tests (co-located)
+    dashboard/
+      dashboard.repository.ts        # DEEP: getUpcomingMatches(), getRecentTips(), getUserStats(), get()
+      dashboard.repository.test.ts   # unit tests (co-located)
+      dashboard.server.ts            # thin: getDashboardFn (auth-aware)
+      dashboard.queries.ts           # dashboardQueryOptions (staleTime: 30s)
+    profile/
+      profile.repository.ts          # DEEP: get() — user info, rank, all tips
+      profile.repository.test.ts     # unit tests (co-located)
+      profile.server.ts              # thin: getProfileFn (auth-required)
+      profile.queries.ts             # profileQueryOptions (staleTime: 30s)
   routes/
-    __root.tsx                       # Root layout + Navbar with auth state
-    index.tsx                        # Dashboard
+    __root.tsx                       # Root layout + Navbar with auth state (profile link)
+    index.tsx                        # Dashboard (upcoming matches, recent tips, stats)
     login.tsx                        # Sign in / Sign up combined page
+    profile.tsx                      # Authenticated user profile + full tip history
     leaderboard.tsx                  # Top 50 users by points
     matches/
       index.tsx                      # Fixture list
@@ -177,3 +189,5 @@ Document the *why*, not the *what*:
 ## Not Yet Implemented
 
 - Social features (private leagues, invite codes)
+- Match filtering/grouping on the fixture list (by stage, by status)
+- Optimistic updates on tip submission
