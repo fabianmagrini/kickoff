@@ -73,7 +73,12 @@ function Navbar() {
       <div className="flex items-center gap-3 text-sm">
         {isPending ? null : session?.user ? (
           <>
-            <span className="text-muted-foreground hidden sm:block">{session.user.name}</span>
+            <Link
+              to="/profile"
+              className="text-muted-foreground hover:text-foreground transition-colors hidden sm:block"
+            >
+              {session.user.name}
+            </Link>
             <button
               onClick={() => authClient.signOut()}
               className="text-muted-foreground hover:text-foreground transition-colors"
