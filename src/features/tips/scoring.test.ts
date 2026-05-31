@@ -33,4 +33,12 @@ describe('calculatePoints', () => {
   it('awards 0 points for wrong outcome (predicted away win, actual draw)', () => {
     expect(calculatePoints(0, 2, 1, 1)).toBe(0);
   });
+
+  it('awards 3 points for an exact away win prediction', () => {
+    expect(calculatePoints(0, 2, 0, 2)).toBe(3);
+  });
+
+  it('awards 1 point (not 3) when only the home score matches but outcomes agree', () => {
+    expect(calculatePoints(2, 0, 2, 1)).toBe(1);
+  });
 });
