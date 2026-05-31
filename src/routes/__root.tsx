@@ -71,7 +71,7 @@ function Navbar() {
       </div>
 
       <div className="flex items-center gap-3 text-sm">
-        {isPending ? null : session ? (
+        {isPending ? null : session?.user ? (
           <>
             <span className="text-muted-foreground hidden sm:block">{session.user.name}</span>
             <button
