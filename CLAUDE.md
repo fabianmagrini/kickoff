@@ -189,3 +189,5 @@ Document the *why*, not the *what*:
 ## Backlog
 
 See [docs/backlog.md](./docs/backlog.md) for the full prioritised list of outstanding features, testing gaps, and infrastructure work.
+
+Significant architecture decisions are recorded as ADRs in [docs/adr/](./docs/adr/).
