@@ -33,6 +33,7 @@ vi.mock('drizzle-orm', () => ({
 }));
 
 import { scoreCompletedMatches } from './scoring.service';
+import { eq } from 'drizzle-orm';
 
 describe('scoreCompletedMatches', () => {
   beforeEach(() => {
@@ -69,6 +70,7 @@ describe('scoreCompletedMatches', () => {
     const result = await scoreCompletedMatches();
 
     expect(result).toEqual({ tipsScored: 1, matchesProcessed: 1 });
+    expect(eq).toHaveBeenCalledWith(expect.anything(), 't1'); // update targets tip t1
     expect(updateBuilder.set).toHaveBeenNthCalledWith(
       1,
       expect.objectContaining({ pointsEarned: 3, scoredAt: expect.any(Date) }),
@@ -86,6 +88,7 @@ describe('scoreCompletedMatches', () => {
     const result = await scoreCompletedMatches();
 
     expect(result).toEqual({ tipsScored: 1, matchesProcessed: 1 });
+    expect(eq).toHaveBeenCalledWith(expect.anything(), 't1'); // update targets tip t1
     expect(updateBuilder.set).toHaveBeenNthCalledWith(
       1,
       expect.objectContaining({ pointsEarned: 1, scoredAt: expect.any(Date) }),
@@ -103,10 +106,24 @@ describe('scoreCompletedMatches', () => {
     const result = await scoreCompletedMatches();
 
     expect(result).toEqual({ tipsScored: 1, matchesProcessed: 1 });
+    expect(eq).toHaveBeenCalledWith(expect.anything(), 't1'); // update targets tip t1
     expect(updateBuilder.set).toHaveBeenNthCalledWith(
       1,
       expect.objectContaining({ pointsEarned: 0, scoredAt: expect.any(Date) }),
     );
+    expect(updateBuilder.set).toHaveBeenNthCalledWith(2, { points: 0 });
+  });
+
+  it('treats an empty sum result as zero points for the user total', async () => {
+    selectQueue.push([{ id: 'm1', status: 'completed', homeScore: 1, awayScore: 0 }]);
+    selectQueue.push([
+      { id: 't1', userId: 'u1', matchId: 'm1', predictedHomeScore: 1, predictedAwayScore: 0, pointsEarned: 0 },
+    ]);
+    selectQueue.push([]); // sum query returns no rows — result?.total ?? '0' path
+
+    const result = await scoreCompletedMatches();
+
+    expect(result).toEqual({ tipsScored: 1, matchesProcessed: 1 });
     expect(updateBuilder.set).toHaveBeenNthCalledWith(2, { points: 0 });
   });
 

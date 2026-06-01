@@ -55,9 +55,10 @@ describe('leaderboardRepository.getTopN', () => {
     expect(builder.limit).toHaveBeenCalledWith(50);
   });
 
-  it('passes a custom limit without throwing', async () => {
-    selectQueue.push([{ id: 'u1', name: 'Alice', points: 12 }]);
+  it('passes a custom limit and returns the correct row', async () => {
+    const row = { id: 'u1', name: 'Alice', points: 12 };
+    selectQueue.push([row]);
     const result = await leaderboardRepository.getTopN(1);
-    expect(result).toHaveLength(1);
+    expect(result).toEqual([row]);
   });
 });
