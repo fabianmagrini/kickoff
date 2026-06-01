@@ -14,6 +14,7 @@ Each ADR captures the context that led to a decision, the decision itself, and i
 | [0004](./0004-better-auth-for-authentication.md) | Better Auth for authentication | Accepted |
 | [0005](./0005-ai-insights-with-db-cache.md) | AI insights with database-level cache | Accepted |
 | [0006](./0006-zod-v4-upgrade.md) | Upgrade Zod to v4 to resolve better-auth version conflict | Accepted |
+| [0007](./0007-import-protection-exclusion-for-server-fns.md) | Exclude feature server files from import-protection on the client | Accepted |
 
 ## Adding a new ADR
 

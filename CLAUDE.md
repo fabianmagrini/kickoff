@@ -23,7 +23,8 @@ The codebase is organised around **deep modules** — each feature module expose
 
 1. Create `src/features/<name>/<name>.repository.ts` with a named object exposing async methods.
 2. Create `src/features/<name>/<name>.server.ts` wrapping each method as a server function.
-3. Import the server function in the relevant route — one import, one call.
+3. Create `src/features/<name>/<name>.queries.ts` with `queryOptions` wrapping the server fn.
+4. In the relevant route: call `queryClient.ensureQueryData(…QueryOptions)` in the loader (and `return` the result), then read it with `Route.useLoaderData()` or `useQuery({ initialData: loaderData })` in the component.
 
 ## Key Patterns
 
@@ -53,6 +54,20 @@ if (!session?.user) throw new Error('Unauthorized');
 
 ### AI Insights — cache-first
 `insightsRepository.getOrGenerate(matchId)` hides: cache lookup → match fetch → LLM call → DB write. Callers never see this complexity.
+
+### Route loaders — always return data
+Loaders must `return` the result of `ensureQueryData` so TanStack Router serialises it server→client. A void loader body leaves the client QueryClient empty; `getQueryData` then returns `undefined` on first paint.
+
+```ts
+// ✓ data reaches the client
+loader: ({ context: { queryClient }, params }) =>
+  queryClient.ensureQueryData(matchQueryOptions(params.matchId)),
+
+// ✗ cache is populated on server only — client starts empty
+loader: async ({ context: { queryClient }, params }) => {
+  await queryClient.ensureQueryData(matchQueryOptions(params.matchId));
+},
+```
 
 ### Cross-feature dependencies
 Repositories may depend on other repositories (e.g. `insightsRepository` calls `matchesRepository.getById`). Server functions must not call other server functions.
@@ -109,6 +124,7 @@ src/
   features/
     matches/
       matches.repository.ts          # DEEP: getAll(), getById()
+      matches.repository.test.ts     # unit tests (co-located)
       matches.server.ts              # thin: getMatchesFn, getMatchByIdFn
       matches.queries.ts             # matchQueryOptions, matchesQueryOptions
     tips/
