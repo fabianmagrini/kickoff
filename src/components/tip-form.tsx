@@ -26,7 +26,7 @@ export function TipForm({
   const [homeScore, setHomeScore] = useState('');
   const [awayScore, setAwayScore] = useState('');
 
-  const { mutate: submitTip, isPending, error, isSuccess } = useMutation({
+  const { mutate: submitTip, isPending, error } = useMutation({
     mutationFn: () =>
       submitTipFn({
         data: {
@@ -35,7 +35,28 @@ export function TipForm({
           predictedAwayScore: parseInt(awayScore, 10),
         },
       }),
-    onSuccess: () => {
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: userTipQueryOptions(matchId).queryKey });
+      const previous = queryClient.getQueryData(userTipQueryOptions(matchId).queryKey);
+      queryClient.setQueryData(userTipQueryOptions(matchId).queryKey, {
+        isAuthenticated: true,
+        tip: {
+          id: '',
+          userId: '',
+          matchId,
+          predictedHomeScore: parseInt(homeScore, 10),
+          predictedAwayScore: parseInt(awayScore, 10),
+          pointsEarned: 0,
+          scoredAt: null,
+          createdAt: new Date(),
+        },
+      });
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      queryClient.setQueryData(userTipQueryOptions(matchId).queryKey, context?.previous);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: userTipQueryOptions(matchId).queryKey });
     },
   });
@@ -122,10 +143,6 @@ export function TipForm({
           {error instanceof Error ? error.message : 'Failed to submit tip'}
         </p>
       )}
-      {isSuccess && (
-        <p className="text-sm text-green-600 font-medium">Tip locked in!</p>
-      )}
-
       <button
         type="submit"
         disabled={isPending || !homeScore || !awayScore}
