@@ -71,7 +71,7 @@ describe('scoreCompletedMatches', () => {
     expect(result).toEqual({ tipsScored: 1, matchesProcessed: 1 });
     expect(updateBuilder.set).toHaveBeenNthCalledWith(
       1,
-      expect.objectContaining({ pointsEarned: 3 }),
+      expect.objectContaining({ pointsEarned: 3, scoredAt: expect.any(Date) }),
     );
     expect(updateBuilder.set).toHaveBeenNthCalledWith(2, { points: 3 });
   });
@@ -88,8 +88,9 @@ describe('scoreCompletedMatches', () => {
     expect(result).toEqual({ tipsScored: 1, matchesProcessed: 1 });
     expect(updateBuilder.set).toHaveBeenNthCalledWith(
       1,
-      expect.objectContaining({ pointsEarned: 1 }),
+      expect.objectContaining({ pointsEarned: 1, scoredAt: expect.any(Date) }),
     );
+    expect(updateBuilder.set).toHaveBeenNthCalledWith(2, { points: 1 });
   });
 
   it('scores a wrong-outcome prediction with 0 points', async () => {
@@ -104,7 +105,7 @@ describe('scoreCompletedMatches', () => {
     expect(result).toEqual({ tipsScored: 1, matchesProcessed: 1 });
     expect(updateBuilder.set).toHaveBeenNthCalledWith(
       1,
-      expect.objectContaining({ pointsEarned: 0 }),
+      expect.objectContaining({ pointsEarned: 0, scoredAt: expect.any(Date) }),
     );
     expect(updateBuilder.set).toHaveBeenNthCalledWith(2, { points: 0 });
   });
@@ -125,5 +126,8 @@ describe('scoreCompletedMatches', () => {
     expect(result).toEqual({ tipsScored: 2, matchesProcessed: 1 });
     // 2 tip updates + 2 user-total updates = 4 set() calls
     expect(updateBuilder.set).toHaveBeenCalledTimes(4);
+    // Both users had their point totals updated (calls 3 and 4)
+    expect(updateBuilder.set).toHaveBeenNthCalledWith(3, { points: 1 });
+    expect(updateBuilder.set).toHaveBeenNthCalledWith(4, { points: 1 });
   });
 });

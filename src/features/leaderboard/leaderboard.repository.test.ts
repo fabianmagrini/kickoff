@@ -47,6 +47,14 @@ describe('leaderboardRepository.getTopN', () => {
     expect(await leaderboardRepository.getTopN()).toEqual(rows);
   });
 
+  it('uses 50 as the default limit', async () => {
+    selectQueue.push([{ id: 'u1', name: 'Alice', points: 12 }]);
+    await leaderboardRepository.getTopN();
+    const { db } = await import('@/db');
+    const builder = (db.select as ReturnType<typeof vi.fn>).mock.results[0].value;
+    expect(builder.limit).toHaveBeenCalledWith(50);
+  });
+
   it('passes a custom limit without throwing', async () => {
     selectQueue.push([{ id: 'u1', name: 'Alice', points: 12 }]);
     const result = await leaderboardRepository.getTopN(1);
