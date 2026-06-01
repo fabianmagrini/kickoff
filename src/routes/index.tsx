@@ -181,7 +181,7 @@ function UpcomingMatchesSection({ upcomingMatches }: { upcomingMatches: Upcoming
                   {match.homeTeam} vs {match.awayTeam}
                 </span>
                 <span className="text-xs text-muted-foreground shrink-0 ml-2">
-                  {new Date(match.matchDate).toLocaleDateString(undefined, {
+                  {new Date(match.matchDate).toLocaleDateString('en', {
                     month: 'short',
                     day: 'numeric',
                   })}

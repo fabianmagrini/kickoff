@@ -1,6 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
-import { getLeaderboardFn } from '@/features/leaderboard/leaderboard.server';
 import { leaderboardQueryOptions } from '@/features/leaderboard/leaderboard.queries';
 import { RouteError } from '@/components/route-error';
 

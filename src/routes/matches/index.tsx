@@ -141,7 +141,7 @@ function MatchRow({ match }: { match: Match }) {
           <div>
             <p className="text-xs text-muted-foreground">vs</p>
             <p className="text-xs text-muted-foreground">
-              {new Date(match.matchDate).toLocaleDateString(undefined, {
+              {new Date(match.matchDate).toLocaleDateString('en', {
                 day: 'numeric',
                 month: 'short',
               })}

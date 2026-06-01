@@ -15,6 +15,7 @@ export const Route = createFileRoute('/matches/$matchId')({
       queryClient.ensureQueryData(userTipQueryOptions(params.matchId)),
     ]);
     if (!match) throw new Error('Match not found');
+    return match;
   },
   errorComponent: ({ error, reset }) => <RouteError error={error} reset={reset} />,
   component: MatchDetail,
@@ -24,7 +25,7 @@ function MatchDetail() {
   const { matchId } = Route.useParams();
   const queryClient = useQueryClient();
 
-  const match = queryClient.getQueryData(matchQueryOptions(matchId).queryKey)!;
+  const match = Route.useLoaderData();
   const cachedInsight = queryClient.getQueryData(insightQueryOptions(matchId).queryKey);
 
   // Reactive: refetches automatically after tip submission
@@ -68,7 +69,7 @@ function MatchDetail() {
           <span className="text-sm text-muted-foreground">{match.venue}</span>
           <span className="text-sm text-muted-foreground">·</span>
           <span className="text-sm text-muted-foreground">
-            {new Date(match.matchDate).toLocaleString()}
+            {new Date(match.matchDate).toLocaleString('en')}
           </span>
           {match.status === 'live' && (
             <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
