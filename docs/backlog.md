@@ -1,14 +1,6 @@
 # Kickoff — Backlog
 
-## 1. `insights.repository` Unit Tests
-Cache-first LLM call — more complex than the others.
-
-- Test `getCached()`: cache hit returns row, cache miss returns null
-- Test `getOrGenerate()`: cache hit skips LLM, cache miss calls LLM and writes to DB
-- Requires mocking both `@/db` and the AI model (`@/ai`)
-- File: `src/features/insights/insights.repository.test.ts`
-
-## 2. `tip-form.tsx` E2E Tests
+## 1. `tip-form.tsx` E2E Tests
 The optimistic tip submission flow has no test coverage.
 
 - Authenticated user submits a tip → UI updates immediately (optimistic state)

@@ -135,6 +135,7 @@ src/
       scoring.test.ts                # unit tests (co-located)
     insights/
       insights.repository.ts         # DEEP: getCached(), getOrGenerate()
+      insights.repository.test.ts    # unit tests (co-located)
       insights.server.ts             # thin: getCachedInsightFn, getOrGenerateInsightFn
       insights.queries.ts            # insightQueryOptions
     leaderboard/
