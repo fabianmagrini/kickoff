@@ -195,6 +195,8 @@ New code must be covered by tests at the appropriate level:
 
 When adding a new feature, add tests before marking the task done. Aim for each file in `src/features/` to have a corresponding `*.test.ts` sibling or an E2E spec that covers its public contract.
 
+When modifying existing code, update or add a test that would fail without the change. Bug fixes must include a regression test that would have caught the bug before the fix.
+
 ### Documentation
 Document the *why*, not the *what*:
 
