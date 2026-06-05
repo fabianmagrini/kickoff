@@ -117,7 +117,7 @@ src/
     index.ts                         # AI model factory (AI_PROVIDER / AI_MODEL env vars)
   auth/
     auth.ts                          # Better Auth config
-    auth.client.ts                   # createAuthClient() for React hooks
+    authClient.ts                    # createAuthClient() for React hooks (isomorphic — no .client. naming)
   db/
     index.ts                         # Drizzle client (neon-http driver)
     schema.ts                        # All table definitions

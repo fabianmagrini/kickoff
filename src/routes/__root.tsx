@@ -1,7 +1,7 @@
 import { createRootRouteWithContext, HeadContent, Link, Outlet, Scripts, ScrollRestoration, useRouter } from '@tanstack/react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
-import { authClient } from '@/auth/auth.client';
+import { authClient } from '@/auth/authClient';
 import appCss from '@/styles/app.css?url';
 
 interface RouterContext {
