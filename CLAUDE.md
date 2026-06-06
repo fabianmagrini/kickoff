@@ -224,7 +224,7 @@ Document the *why*, not the *what*:
 ### Feature completion checklist
 Before marking any feature or backlog item as done, apply these four steps in the same commit as the implementation:
 
-1. **`docs/backlog.md`** — remove the item (or replace it with any follow-on work it uncovered).
+1. **`docs/backlog.md`** — remove the item (or replace it with any follow-on work it uncovered) and move it to `docs/completed.md` with the ship date and commit SHA.
 2. **CLAUDE.md Project Structure** — add every new file to the tree with a one-line comment.
 3. **`docs/architecture.md §9`** — if the quality assessment mentions a gap that is now closed, update that row.
 4. **ADR** — if the decision meets the criteria in `docs/adr/README.md`, write one before closing the item.
@@ -247,6 +247,6 @@ An ADR does not need to be long. Two or three sentences per section is enough if
 
 ## Backlog
 
-See [docs/backlog.md](./docs/backlog.md) for the prioritised list of outstanding infrastructure and hardening work (all features are shipped).
+See [docs/backlog.md](./docs/backlog.md) for the prioritised list of outstanding infrastructure and hardening work (all features are shipped). Completed items are archived in [docs/completed.md](./docs/completed.md).
 
 Significant architecture decisions are recorded as ADRs in [docs/adr/](./docs/adr/).
