@@ -156,12 +156,17 @@ src/
       profile.repository.test.ts     # unit tests (co-located)
       profile.server.ts              # thin: getProfileFn (auth-required)
       profile.queries.ts             # profileQueryOptions (staleTime: 30s)
+    admin/
+      admin.repository.ts            # DEEP: updateMatch() — updates score + triggers re-scoring
+      admin.repository.test.ts       # unit tests (co-located)
+      admin.server.ts                # thin: checkIsAdminFn, updateMatchFn (ADMIN_USER_IDS guard)
   routes/
     __root.tsx                       # Root layout + Navbar with auth state (profile link)
     index.tsx                        # Dashboard (upcoming matches, recent tips, stats)
     login.tsx                        # Sign in / Sign up combined page
     profile.tsx                      # Authenticated user profile + full tip history
     leaderboard.tsx                  # Top 50 users by points
+    admin.tsx                        # Admin match score entry (admin-gated)
     matches/
       index.tsx                      # Fixture list
       $matchId.tsx                   # Match detail + tip form + AI co-pilot

@@ -379,7 +379,7 @@ No pipeline is configured. The project is structured to support CI easily — al
 |---|---|
 | **Architectural consistency** | Deep module pattern applied uniformly across all 8 feature slices |
 | **Type safety** | End-to-end: DB schema → server fn → client; no visible `any` |
-| **Test coverage** | 45 unit tests, E2E for all major flows; gaps in server fn auth tests and admin |
+| **Test coverage** | Unit tests for all repositories and scoring logic; E2E for all features including admin auth, cron security, and profile authenticated paths |
 | **Developer experience** | One-command dev, co-located tests, CLAUDE.md documents the why |
 | **Observability** | No structured logging, no error tracking, no metrics |
 | **CI/CD** | No pipeline; tests run locally only |

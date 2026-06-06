@@ -1,13 +1,5 @@
 # Kickoff — Backlog
 
-## 4. Admin UI / Manual Score Entry
-No way to update match results without direct DB access or the API-Football cron.
-
-- Route: `/admin` (auth-gated to an admin role or env-var flag)
-- Form to set `homeScore`, `awayScore`, and `status` on a match
-- Triggers re-scoring on save (calls `scoreCompletedMatches`)
-- Requires adding an `isAdmin` field to the user schema or an `ADMIN_USER_IDS` env var
-
 ## 5. Private Leagues
 Invite-code-based groups with their own scoped leaderboard.
 
