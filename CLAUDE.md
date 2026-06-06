@@ -239,6 +239,6 @@ An ADR does not need to be long. Two or three sentences per section is enough if
 
 ## Backlog
 
-See [docs/backlog.md](./docs/backlog.md) for the full prioritised list of outstanding features, testing gaps, and infrastructure work.
+See [docs/backlog.md](./docs/backlog.md) for the prioritised list of outstanding infrastructure and hardening work (all features are shipped).
 
 Significant architecture decisions are recorded as ADRs in [docs/adr/](./docs/adr/).

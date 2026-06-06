@@ -471,9 +471,10 @@ Renaming `auth.client.ts` to `authClient.ts` fixed the production build. The `.c
 - Add insight TTL — regenerate insights older than 24h pre-kickoff
 - Add a health endpoint — `GET /healthz → { ok: true }` for deployment checks
 
-**Architecture**
-- Private Leagues — the remaining backlog item; needs `leagues` + `league_members` schema tables and scoped leaderboard queries
+**Low priority**
 - Admin audit log — record who changed which score and when
+
+See [docs/backlog.md](../docs/backlog.md) for implementation detail on each item.
 
 ---
 
