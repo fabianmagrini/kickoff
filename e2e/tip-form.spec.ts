@@ -50,6 +50,10 @@ async function goToScheduledMatch(page: Page): Promise<boolean> {
   await link.click();
   await page.waitForURL(/\/matches\/.+/);
   await expect(page.getByRole('heading', { name: /your tip/i })).toBeVisible();
+  // Wait for background refetches (staleTime:0 on userTipQueryOptions) to settle
+  // before interacting with the form — avoids mid-fill component remounts that
+  // reset React state and leave the submit button disabled.
+  await page.waitForLoadState('networkidle');
   return true;
 }
 
@@ -61,7 +65,10 @@ test('unauthenticated user sees sign-in prompt on a scheduled match', async ({ p
   await link.click();
   await page.waitForURL(/\/matches\/.+/);
   await expect(page.getByText('Sign in to submit a tip')).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Sign in' })).toHaveAttribute('href', /\/login/);
+  // Scope to the tip section to avoid matching the navbar "Sign in" link.
+  await expect(
+    page.locator('div:has-text("Sign in to submit a tip")').getByRole('link', { name: 'Sign in' })
+  ).toHaveAttribute('href', /\/login/);
 });
 
 test('sign-in prompt link navigates to the login page', async ({ page }) => {
@@ -154,4 +161,27 @@ test('rolls back to the form and shows an error when submission fails', async ({
   // Form must be restored and an error message shown after rollback.
   await expect(page.getByRole('button', { name: 'Lock in Tip' })).toBeVisible({ timeout: 5_000 });
   await expect(page.locator('.text-destructive')).toBeVisible();
+});
+
+test('successful submission locks the form and persists after reload', async ({ page }) => {
+  await authenticate(page);
+  const hasMatch = await goToScheduledMatch(page);
+  test.skip(!hasMatch, 'No scheduled matches — run npm run db:seed:dev');
+
+  const matchUrl = page.url();
+  const inputs = page.locator('input[type="number"]');
+  await expect(inputs.nth(0)).toBeVisible({ timeout: 5_000 });
+  await inputs.nth(0).fill('1');
+  await inputs.nth(1).fill('0');
+  await page.getByRole('button', { name: 'Lock in Tip' }).click();
+
+  // Locked state appears immediately (optimistic update).
+  await expect(page.getByText('Your tip: 1 – 0')).toBeVisible({ timeout: 5_000 });
+  await expect(page.getByText('Tips are locked once submitted.')).toBeVisible();
+
+  // Reload — tip must still be locked (server-persisted).
+  await page.goto(matchUrl);
+  await page.waitForLoadState('networkidle');
+  await expect(page.getByText('Your tip: 1 – 0')).toBeVisible({ timeout: 5_000 });
+  await expect(page.locator('input[type="number"]')).toHaveCount(0);
 });
