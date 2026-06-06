@@ -58,3 +58,50 @@ test('invalid match ID shows error boundary', async ({ page }) => {
   await expect(page.getByRole('heading', { name: /something went wrong/i })).toBeVisible();
   await expect(page.getByText('Match not found')).toBeVisible();
 });
+
+test('Consult Co-Pilot button shows analysing state while request is in flight', async ({ page }) => {
+  await page.goto('/matches');
+  const firstMatch = page.getByRole('link', { name: /vs/i }).first();
+  test.skip(await firstMatch.count() === 0, 'No scheduled matches — run npm run db:seed:dev');
+  await firstMatch.click();
+  await page.waitForURL(/\/matches\/.+/);
+  await page.waitForLoadState('networkidle');
+
+  // If there is already a cached insight, skip (button won't be present)
+  const hasButton = await page.getByRole('button', { name: /consult co-pilot/i }).isVisible();
+  test.skip(!hasButton, 'Insight already cached for this match — loading state test not applicable');
+
+  // Delay the POST so we can assert the loading state before it resolves
+  await page.route('**/_serverFn/**', async (route) => {
+    if (route.request().method() === 'POST') {
+      await new Promise(r => setTimeout(r, 2000));
+      await route.continue();
+    } else {
+      await route.continue();
+    }
+  });
+
+  await page.getByRole('button', { name: /consult co-pilot/i }).click();
+  await expect(page.getByRole('button', { name: /analysing/i })).toBeVisible({ timeout: 1_000 });
+  await expect(page.getByRole('button', { name: /analysing/i })).toBeDisabled();
+});
+
+test('cached insight loads without button on hard reload', async ({ page }) => {
+  await page.goto('/matches');
+  const firstMatch = page.getByRole('link', { name: /vs/i }).first();
+  test.skip(await firstMatch.count() === 0, 'No scheduled matches — run npm run db:seed:dev');
+  await firstMatch.click();
+  await page.waitForURL(/\/matches\/.+/);
+  const matchUrl = page.url();
+  await page.waitForLoadState('networkidle');
+
+  // Skip if no insight is cached for this match
+  const hasInsight = await page.getByText(/Home Win/i).isVisible();
+  test.skip(!hasInsight, 'No cached insight for this match — click Consult Co-Pilot first');
+
+  // Hard reload: useQuery fetches getCachedInsightFn from DB and shows insight
+  await page.goto(matchUrl);
+  await page.waitForLoadState('networkidle');
+  await expect(page.getByText(/Home Win/i)).toBeVisible({ timeout: 5_000 });
+  await expect(page.getByRole('button', { name: /consult co-pilot/i })).not.toBeVisible();
+});

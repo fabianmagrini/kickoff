@@ -26,7 +26,10 @@ function MatchDetail() {
   const queryClient = useQueryClient();
 
   const match = Route.useLoaderData();
-  const cachedInsight = queryClient.getQueryData(insightQueryOptions(matchId).queryKey);
+
+  // useQuery (not getQueryData) so the insight auto-fetches from DB on hard reload
+  // when the dehydrated state doesn't include it.
+  const { data: cachedInsight } = useQuery(insightQueryOptions(matchId));
 
   // Reactive: refetches automatically after tip submission
   const { data: tipData } = useQuery(userTipQueryOptions(matchId));
@@ -68,7 +71,7 @@ function MatchDetail() {
           )}
           <span className="text-sm text-muted-foreground">{match.venue}</span>
           <span className="text-sm text-muted-foreground">·</span>
-          <span className="text-sm text-muted-foreground">
+          <span className="text-sm text-muted-foreground" suppressHydrationWarning>
             {new Date(match.matchDate).toLocaleString('en')}
           </span>
           {match.status === 'live' && (
