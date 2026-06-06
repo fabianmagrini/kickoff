@@ -74,3 +74,38 @@ test('back link returns to home', async ({ page }) => {
   await page.getByRole('link', { name: /back to kickoff/i }).click();
   await expect(page).toHaveURL('/');
 });
+
+test('successful sign-up redirects to home and shows user name in navbar', async ({ page }) => {
+  const email = `e2e-signup-${Date.now()}@kickoff.test`;
+  await page.goto('/login');
+  await waitForReactHydration(page);
+  await page.getByRole('button').filter({ hasText: 'Sign up' }).click();
+  await page.getByLabel('Name').fill('Nav Test User');
+  await page.getByLabel('Email').fill(email);
+  await page.getByLabel('Password').fill('TestPass123!');
+  await page.getByRole('button', { name: 'Create account' }).click();
+
+  // Full-page reload after sign-up means SSR serves the session from first paint.
+  await page.waitForURL('/', { timeout: 15_000 });
+  await expect(page.locator('nav')).toContainText('Nav Test User', { timeout: 5_000 });
+});
+
+test('sign out clears the session and shows sign-in link', async ({ page }) => {
+  // Sign up first to get an authenticated session.
+  const email = `e2e-signout-${Date.now()}@kickoff.test`;
+  await page.goto('/login');
+  await waitForReactHydration(page);
+  await page.getByRole('button').filter({ hasText: 'Sign up' }).click();
+  await page.getByLabel('Name').fill('Signout User');
+  await page.getByLabel('Email').fill(email);
+  await page.getByLabel('Password').fill('TestPass123!');
+  await page.getByRole('button', { name: 'Create account' }).click();
+  await page.waitForURL('/', { timeout: 15_000 });
+  await expect(page.locator('nav')).toContainText('Signout User', { timeout: 5_000 });
+
+  // Sign out — full reload means SSR returns the unauthenticated state.
+  await page.getByRole('button', { name: 'Sign out' }).click();
+  await page.waitForURL('/', { timeout: 10_000 });
+  await expect(page.locator('nav')).toContainText('Sign in', { timeout: 5_000 });
+  await expect(page.locator('nav')).not.toContainText('Signout User');
+});

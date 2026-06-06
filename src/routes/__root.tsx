@@ -80,7 +80,7 @@ function Navbar() {
               {session.user.name}
             </Link>
             <button
-              onClick={() => authClient.signOut()}
+              onClick={async () => { await authClient.signOut(); window.location.href = '/'; }}
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
               Sign out

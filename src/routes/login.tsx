@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { authClient } from '@/auth/authClient';
 
@@ -7,7 +7,6 @@ export const Route = createFileRoute('/login')({
 });
 
 function LoginPage() {
-  const navigate = useNavigate();
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -28,7 +27,9 @@ function LoginPage() {
         const result = await authClient.signUp.email({ email, password, name });
         if (result.error) throw new Error(result.error.message ?? 'Sign up failed');
       }
-      navigate({ to: '/' });
+      // Full reload so SSR picks up the new session cookie — avoids a
+      // brief "Sign in" flash that occurs with a client-side navigate().
+      window.location.href = '/';
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
