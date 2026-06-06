@@ -221,6 +221,14 @@ Document the *why*, not the *what*:
 - **Code comments** — only when the reason behind a decision is non-obvious (a workaround, a hidden constraint, a schema quirk). Do not describe what the code does; well-named identifiers do that.
 - **Server function modules** — add a one-line JSDoc on exported server functions that have auth requirements or non-obvious side effects.
 
+### Feature completion checklist
+Before marking any feature or backlog item as done, apply these four steps in the same commit as the implementation:
+
+1. **`docs/backlog.md`** — remove the item (or replace it with any follow-on work it uncovered).
+2. **CLAUDE.md Project Structure** — add every new file to the tree with a one-line comment.
+3. **`docs/architecture.md §9`** — if the quality assessment mentions a gap that is now closed, update that row.
+4. **ADR** — if the decision meets the criteria in `docs/adr/README.md`, write one before closing the item.
+
 ### Architecture Decision Records
 Write an ADR in `docs/adr/` whenever a decision meets any of these criteria:
 
