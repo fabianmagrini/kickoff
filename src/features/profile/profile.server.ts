@@ -3,6 +3,7 @@ import { getRequest } from '@tanstack/react-start/server';
 import { auth } from '@/auth/auth';
 import { profileRepository } from './profile.repository';
 
+/** Returns the authenticated user's profile and full tip history. Requires auth. */
 export const getProfileFn = createServerFn({ method: 'GET' }).handler(async () => {
   const session = await auth.api.getSession({ headers: getRequest().headers });
   if (!session?.user) throw new Error('Unauthorized');
