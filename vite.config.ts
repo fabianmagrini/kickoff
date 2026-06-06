@@ -17,6 +17,10 @@ export default defineConfig({
     }), // MUST come before react()
     viteReact(),
   ],
+  server: {
+    port: 5173,
+    strictPort: true, // fail fast instead of silently incrementing to 5174, 5175…
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
