@@ -1,9 +1,8 @@
 # Kickoff — Backlog
 
-## 5. Private Leagues
-Invite-code-based groups with their own scoped leaderboard.
+All planned features have been implemented. Outstanding infrastructure improvements:
 
-- New schema: `leagues` (id, name, invite code) and `league_members` (league_id, user_id)
-- Routes: `/leagues`, `/leagues/$leagueId`, `/leagues/join`
-- Server functions: create league, generate invite code, join by code, get league leaderboard
-- Leaderboard scoped to league members only
+- **CI/CD** — GitHub Actions pipeline for automated test runs on PR and push to main
+- **Rate limiting** — per-user cooldown on the AI co-pilot endpoint to prevent LLM cost overruns
+- **Structured logging** — `pino` with request IDs for production observability
+- **Insight TTL** — regenerate `ai_match_insights` older than 24h before kickoff

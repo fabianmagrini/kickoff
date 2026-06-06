@@ -15,7 +15,10 @@ import { Route as LeaderboardRouteImport } from './routes/leaderboard'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as MatchesIndexRouteImport } from './routes/matches/index'
+import { Route as LeaguesIndexRouteImport } from './routes/leagues/index'
 import { Route as MatchesMatchIdRouteImport } from './routes/matches/$matchId'
+import { Route as LeaguesJoinRouteImport } from './routes/leagues/join'
+import { Route as LeaguesLeagueIdRouteImport } from './routes/leagues/$leagueId'
 import { Route as ApiCronScoreRouteImport } from './routes/api/cron/score'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
@@ -49,9 +52,24 @@ const MatchesIndexRoute = MatchesIndexRouteImport.update({
   path: '/matches/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LeaguesIndexRoute = LeaguesIndexRouteImport.update({
+  id: '/leagues/',
+  path: '/leagues/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MatchesMatchIdRoute = MatchesMatchIdRouteImport.update({
   id: '/matches/$matchId',
   path: '/matches/$matchId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LeaguesJoinRoute = LeaguesJoinRouteImport.update({
+  id: '/leagues/join',
+  path: '/leagues/join',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LeaguesLeagueIdRoute = LeaguesLeagueIdRouteImport.update({
+  id: '/leagues/$leagueId',
+  path: '/leagues/$leagueId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiCronScoreRoute = ApiCronScoreRouteImport.update({
@@ -71,7 +89,10 @@ export interface FileRoutesByFullPath {
   '/leaderboard': typeof LeaderboardRoute
   '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
+  '/leagues/$leagueId': typeof LeaguesLeagueIdRoute
+  '/leagues/join': typeof LeaguesJoinRoute
   '/matches/$matchId': typeof MatchesMatchIdRoute
+  '/leagues/': typeof LeaguesIndexRoute
   '/matches/': typeof MatchesIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/score': typeof ApiCronScoreRoute
@@ -82,7 +103,10 @@ export interface FileRoutesByTo {
   '/leaderboard': typeof LeaderboardRoute
   '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
+  '/leagues/$leagueId': typeof LeaguesLeagueIdRoute
+  '/leagues/join': typeof LeaguesJoinRoute
   '/matches/$matchId': typeof MatchesMatchIdRoute
+  '/leagues': typeof LeaguesIndexRoute
   '/matches': typeof MatchesIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/score': typeof ApiCronScoreRoute
@@ -94,7 +118,10 @@ export interface FileRoutesById {
   '/leaderboard': typeof LeaderboardRoute
   '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
+  '/leagues/$leagueId': typeof LeaguesLeagueIdRoute
+  '/leagues/join': typeof LeaguesJoinRoute
   '/matches/$matchId': typeof MatchesMatchIdRoute
+  '/leagues/': typeof LeaguesIndexRoute
   '/matches/': typeof MatchesIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/score': typeof ApiCronScoreRoute
@@ -107,7 +134,10 @@ export interface FileRouteTypes {
     | '/leaderboard'
     | '/login'
     | '/profile'
+    | '/leagues/$leagueId'
+    | '/leagues/join'
     | '/matches/$matchId'
+    | '/leagues/'
     | '/matches/'
     | '/api/auth/$'
     | '/api/cron/score'
@@ -118,7 +148,10 @@ export interface FileRouteTypes {
     | '/leaderboard'
     | '/login'
     | '/profile'
+    | '/leagues/$leagueId'
+    | '/leagues/join'
     | '/matches/$matchId'
+    | '/leagues'
     | '/matches'
     | '/api/auth/$'
     | '/api/cron/score'
@@ -129,7 +162,10 @@ export interface FileRouteTypes {
     | '/leaderboard'
     | '/login'
     | '/profile'
+    | '/leagues/$leagueId'
+    | '/leagues/join'
     | '/matches/$matchId'
+    | '/leagues/'
     | '/matches/'
     | '/api/auth/$'
     | '/api/cron/score'
@@ -141,7 +177,10 @@ export interface RootRouteChildren {
   LeaderboardRoute: typeof LeaderboardRoute
   LoginRoute: typeof LoginRoute
   ProfileRoute: typeof ProfileRoute
+  LeaguesLeagueIdRoute: typeof LeaguesLeagueIdRoute
+  LeaguesJoinRoute: typeof LeaguesJoinRoute
   MatchesMatchIdRoute: typeof MatchesMatchIdRoute
+  LeaguesIndexRoute: typeof LeaguesIndexRoute
   MatchesIndexRoute: typeof MatchesIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiCronScoreRoute: typeof ApiCronScoreRoute
@@ -191,11 +230,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MatchesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/leagues/': {
+      id: '/leagues/'
+      path: '/leagues'
+      fullPath: '/leagues/'
+      preLoaderRoute: typeof LeaguesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/matches/$matchId': {
       id: '/matches/$matchId'
       path: '/matches/$matchId'
       fullPath: '/matches/$matchId'
       preLoaderRoute: typeof MatchesMatchIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/leagues/join': {
+      id: '/leagues/join'
+      path: '/leagues/join'
+      fullPath: '/leagues/join'
+      preLoaderRoute: typeof LeaguesJoinRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/leagues/$leagueId': {
+      id: '/leagues/$leagueId'
+      path: '/leagues/$leagueId'
+      fullPath: '/leagues/$leagueId'
+      preLoaderRoute: typeof LeaguesLeagueIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/cron/score': {
@@ -221,7 +281,10 @@ const rootRouteChildren: RootRouteChildren = {
   LeaderboardRoute: LeaderboardRoute,
   LoginRoute: LoginRoute,
   ProfileRoute: ProfileRoute,
+  LeaguesLeagueIdRoute: LeaguesLeagueIdRoute,
+  LeaguesJoinRoute: LeaguesJoinRoute,
   MatchesMatchIdRoute: MatchesMatchIdRoute,
+  LeaguesIndexRoute: LeaguesIndexRoute,
   MatchesIndexRoute: MatchesIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiCronScoreRoute: ApiCronScoreRoute,

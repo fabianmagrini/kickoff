@@ -78,6 +78,8 @@ Repositories may depend on other repositories (e.g. `insightsRepository` calls `
 - `user` — Better Auth users + aggregated `points`
 - `tips` — user score predictions per match
 - `ai_match_insights` — cached LLM analysis per match
+- `leagues` — invite-code-based private groups (name, owner, unique invite code)
+- `league_members` — join table linking users to leagues
 
 ## Scoring Rules
 
@@ -160,13 +162,22 @@ src/
       admin.repository.ts            # DEEP: updateMatch() — updates score + triggers re-scoring
       admin.repository.test.ts       # unit tests (co-located)
       admin.server.ts                # thin: checkIsAdminFn, updateMatchFn (ADMIN_USER_IDS guard)
+    leagues/
+      leagues.repository.ts          # DEEP: create(), joinByCode(), getMyLeagues(), getById(), getLeaderboard()
+      leagues.repository.test.ts     # unit tests (co-located)
+      leagues.server.ts              # thin: getMyLeaguesFn, getLeagueFn, createLeagueFn, joinLeagueFn (auth-required)
+      leagues.queries.ts             # myLeaguesQueryOptions, leagueQueryOptions, leagueLeaderboardQueryOptions
   routes/
-    __root.tsx                       # Root layout + Navbar with auth state (profile link)
+    __root.tsx                       # Root layout + Navbar with auth state (profile link, Leagues link)
     index.tsx                        # Dashboard (upcoming matches, recent tips, stats)
     login.tsx                        # Sign in / Sign up combined page
     profile.tsx                      # Authenticated user profile + full tip history
     leaderboard.tsx                  # Top 50 users by points
     admin.tsx                        # Admin match score entry (admin-gated)
+    leagues/
+      index.tsx                      # My leagues list + create form (auth-gated)
+      $leagueId.tsx                  # League detail + scoped leaderboard (member-gated)
+      join.tsx                       # Join by invite code (auth-gated)
     matches/
       index.tsx                      # Fixture list
       $matchId.tsx                   # Match detail + tip form + AI co-pilot

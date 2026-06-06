@@ -67,6 +67,13 @@ function Navbar() {
           >
             Leaderboard
           </Link>
+          <Link
+            to="/leagues"
+            className="text-muted-foreground hover:text-foreground transition-colors"
+            activeProps={{ className: 'text-foreground font-medium' }}
+          >
+            Leagues
+          </Link>
         </div>
       </div>
 

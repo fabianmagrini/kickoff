@@ -81,6 +81,23 @@ export const tips = pgTable('tips', {
   index('tips_user_idx').on(t.userId),
 ]);
 
+export const leagues = pgTable('leagues', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  name: text('name').notNull(),
+  inviteCode: text('invite_code').notNull().unique(),
+  ownerId: text('owner_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const leagueMembers = pgTable('league_members', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  leagueId: uuid('league_id').notNull().references(() => leagues.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  joinedAt: timestamp('joined_at').defaultNow().notNull(),
+}, (t) => [
+  uniqueIndex('league_members_unique_idx').on(t.leagueId, t.userId),
+]);
+
 export const aiMatchInsights = pgTable('ai_match_insights', {
   matchId: uuid('match_id').references(() => matches.id, { onDelete: 'cascade' }).primaryKey(),
   winProbabilityHome: integer('win_probability_home').notNull(),
