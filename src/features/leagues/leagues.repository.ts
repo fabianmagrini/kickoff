@@ -1,6 +1,6 @@
 import { db } from '@/db';
-import { leagues, leagueMembers, users } from '@/db/schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { leagues, leagueMembers, users, userCompetitionPoints } from '@/db/schema';
+import { eq, and, desc, sql } from 'drizzle-orm';
 
 export type League = typeof leagues.$inferSelect;
 export type LeagueLeaderboardEntry = { id: string; name: string; points: number };
@@ -10,9 +10,12 @@ function generateInviteCode(): string {
 }
 
 export const leaguesRepository = {
-  create: async (name: string, ownerId: string): Promise<League> => {
+  create: async (name: string, ownerId: string, competitionId: string): Promise<League> => {
     const inviteCode = generateInviteCode();
-    const [league] = await db.insert(leagues).values({ name, inviteCode, ownerId }).returning();
+    const [league] = await db
+      .insert(leagues)
+      .values({ name, inviteCode, ownerId, competitionId })
+      .returning();
     await db.insert(leagueMembers).values({ leagueId: league.id, userId: ownerId });
     return league;
   },
@@ -34,18 +37,19 @@ export const leaguesRepository = {
     return league;
   },
 
-  getMyLeagues: async (userId: string): Promise<League[]> => {
+  getMyLeagues: async (userId: string, competitionId: string): Promise<League[]> => {
     return db
       .select({
         id: leagues.id,
         name: leagues.name,
         inviteCode: leagues.inviteCode,
         ownerId: leagues.ownerId,
+        competitionId: leagues.competitionId,
         createdAt: leagues.createdAt,
       })
       .from(leagues)
       .innerJoin(leagueMembers, eq(leagueMembers.leagueId, leagues.id))
-      .where(eq(leagueMembers.userId, userId));
+      .where(and(eq(leagueMembers.userId, userId), eq(leagues.competitionId, competitionId)));
   },
 
   getById: async (leagueId: string, userId: string): Promise<League | null> => {
@@ -55,6 +59,7 @@ export const leaguesRepository = {
         name: leagues.name,
         inviteCode: leagues.inviteCode,
         ownerId: leagues.ownerId,
+        competitionId: leagues.competitionId,
         createdAt: leagues.createdAt,
       })
       .from(leagues)
@@ -67,13 +72,25 @@ export const leaguesRepository = {
   },
 
   getLeaderboard: async (leagueId: string): Promise<LeagueLeaderboardEntry[]> => {
+    // Get the league's competition so we can scope points correctly
+    const [league] = await db.select().from(leagues).where(eq(leagues.id, leagueId));
+    if (!league?.competitionId) return [];
+
     return db
-      .select({ id: users.id, name: users.name, points: users.points })
+      .select({
+        id: users.id,
+        name: users.name,
+        points: sql<number>`coalesce(${userCompetitionPoints.points}, 0)`,
+      })
       .from(users)
-      .innerJoin(
-        leagueMembers,
-        and(eq(leagueMembers.userId, users.id), eq(leagueMembers.leagueId, leagueId)),
+      .innerJoin(leagueMembers, and(eq(leagueMembers.userId, users.id), eq(leagueMembers.leagueId, leagueId)))
+      .leftJoin(
+        userCompetitionPoints,
+        and(
+          eq(userCompetitionPoints.userId, users.id),
+          eq(userCompetitionPoints.competitionId, league.competitionId),
+        ),
       )
-      .orderBy(desc(users.points));
+      .orderBy(desc(sql`coalesce(${userCompetitionPoints.points}, 0)`));
   },
 };

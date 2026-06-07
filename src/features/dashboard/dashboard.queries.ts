@@ -1,8 +1,9 @@
 import { queryOptions } from '@tanstack/react-query';
 import { getDashboardFn } from './dashboard.server';
 
-export const dashboardQueryOptions = queryOptions({
-  queryKey: ['dashboard'],
-  queryFn: () => getDashboardFn(),
-  staleTime: 30 * 1000,
-});
+export const dashboardQueryOptions = (competitionId: string) =>
+  queryOptions({
+    queryKey: ['dashboard', competitionId],
+    queryFn: () => getDashboardFn({ data: competitionId }),
+    staleTime: 30 * 1000,
+  });

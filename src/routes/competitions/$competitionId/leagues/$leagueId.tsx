@@ -3,12 +3,13 @@ import { useQuery } from '@tanstack/react-query';
 import { leagueQueryOptions, leagueLeaderboardQueryOptions } from '@/features/leagues/leagues.queries';
 import { RouteError } from '@/components/route-error';
 
-export const Route = createFileRoute('/leagues/$leagueId')({
+export const Route = createFileRoute('/competitions/$competitionId/leagues/$leagueId')({
   loader: async ({ context: { queryClient }, params }) => {
+    const { leagueId } = params;
     try {
       const [league, leaderboard] = await Promise.all([
-        queryClient.ensureQueryData(leagueQueryOptions(params.leagueId)),
-        queryClient.ensureQueryData(leagueLeaderboardQueryOptions(params.leagueId)),
+        queryClient.ensureQueryData(leagueQueryOptions(leagueId)),
+        queryClient.ensureQueryData(leagueLeaderboardQueryOptions(leagueId)),
       ]);
       return { league, leaderboard };
     } catch (err) {
@@ -24,10 +25,8 @@ export const Route = createFileRoute('/leagues/$leagueId')({
 
 function LeaguePage() {
   const { league: leagueData, leaderboard: leaderboardData } = Route.useLoaderData();
-  const { data: league } = useQuery({
-    ...leagueQueryOptions(leagueData.id),
-    initialData: leagueData,
-  });
+  const { params } = Route.useMatch();
+  const { data: league } = useQuery({ ...leagueQueryOptions(leagueData.id), initialData: leagueData });
   const { data: leaderboard } = useQuery({
     ...leagueLeaderboardQueryOptions(leagueData.id),
     initialData: leaderboardData,
@@ -38,7 +37,8 @@ function LeaguePage() {
       <div className="flex items-start justify-between">
         <div>
           <Link
-            to="/leagues"
+            to="/competitions/$competitionId/leagues"
+            params={{ competitionId: params.competitionId }}
             className="text-xs text-muted-foreground hover:text-foreground transition-colors"
           >
             ← Leagues
@@ -52,9 +52,7 @@ function LeaguePage() {
       </div>
 
       <div className="space-y-2">
-        <h2 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-          Members
-        </h2>
+        <h2 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Members</h2>
         {leaderboard.map((entry, idx) => (
           <div key={entry.id} className="border p-4 rounded-xl flex items-center gap-4">
             <span className="text-muted-foreground w-8 text-right">{idx + 1}</span>

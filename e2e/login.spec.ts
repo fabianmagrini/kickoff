@@ -72,7 +72,8 @@ test('invalid credentials keep the user on the login page', async ({ page }) => 
 test('back link returns to home', async ({ page }) => {
   await page.goto('/login');
   await page.getByRole('link', { name: /back to kickoff/i }).click();
-  await expect(page).toHaveURL('/');
+  // / redirects to the active competition dashboard
+  await expect(page).toHaveURL(/\/(competitions\/)?/);
 });
 
 test('successful sign-up redirects to home and shows user name in navbar', async ({ page }) => {
@@ -86,7 +87,7 @@ test('successful sign-up redirects to home and shows user name in navbar', async
   await page.getByRole('button', { name: 'Create account' }).click();
 
   // Full-page reload after sign-up means SSR serves the session from first paint.
-  await page.waitForURL('/', { timeout: 15_000 });
+  await page.waitForURL(/\/competitions\//, { timeout: 15_000 });
   await expect(page.locator('nav')).toContainText('Nav Test User', { timeout: 5_000 });
 });
 
@@ -100,12 +101,12 @@ test('sign out clears the session and shows sign-in link', async ({ page }) => {
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Password').fill('TestPass123!');
   await page.getByRole('button', { name: 'Create account' }).click();
-  await page.waitForURL('/', { timeout: 15_000 });
+  await page.waitForURL(/\/competitions\//, { timeout: 15_000 });
   await expect(page.locator('nav')).toContainText('Signout User', { timeout: 5_000 });
 
   // Sign out — full reload means SSR returns the unauthenticated state.
   await page.getByRole('button', { name: 'Sign out' }).click();
-  await page.waitForURL('/', { timeout: 10_000 });
+  await page.waitForURL(/\/competitions\//, { timeout: 10_000 });
   await expect(page.locator('nav')).toContainText('Sign in', { timeout: 5_000 });
   await expect(page.locator('nav')).not.toContainText('Signout User');
 });

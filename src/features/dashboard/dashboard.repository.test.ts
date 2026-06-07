@@ -22,10 +22,13 @@ vi.mock('drizzle-orm', () => ({
   eq: vi.fn(() => 'eq'),
   gt: vi.fn(() => 'gt'),
   ne: vi.fn(() => 'ne'),
+  and: vi.fn(() => 'and'),
   sql: vi.fn(() => 'sql'),
 }));
 
 import { dashboardRepository } from './dashboard.repository';
+
+const CID = 'comp-1';
 
 const UPCOMING_MATCH = {
   id: 'm1', homeTeam: 'Brazil', awayTeam: 'Argentina',
@@ -43,12 +46,12 @@ describe('dashboardRepository.getUpcomingMatches', () => {
 
   it('returns an empty array when no non-completed matches exist', async () => {
     selectQueue.push([]);
-    expect(await dashboardRepository.getUpcomingMatches()).toEqual([]);
+    expect(await dashboardRepository.getUpcomingMatches(CID)).toEqual([]);
   });
 
   it('returns upcoming match rows from the DB', async () => {
     selectQueue.push([UPCOMING_MATCH]);
-    expect(await dashboardRepository.getUpcomingMatches()).toEqual([UPCOMING_MATCH]);
+    expect(await dashboardRepository.getUpcomingMatches(CID)).toEqual([UPCOMING_MATCH]);
   });
 });
 
@@ -57,12 +60,12 @@ describe('dashboardRepository.getRecentTips', () => {
 
   it('returns an empty array when the user has no tips', async () => {
     selectQueue.push([]);
-    expect(await dashboardRepository.getRecentTips('u1')).toEqual([]);
+    expect(await dashboardRepository.getRecentTips('u1', CID)).toEqual([]);
   });
 
   it('returns tip rows with joined match data', async () => {
     selectQueue.push([RECENT_TIP]);
-    expect(await dashboardRepository.getRecentTips('u1')).toEqual([RECENT_TIP]);
+    expect(await dashboardRepository.getRecentTips('u1', CID)).toEqual([RECENT_TIP]);
   });
 });
 
@@ -71,27 +74,30 @@ describe('dashboardRepository.getUserStats', () => {
 
   it('returns null when the user row does not exist', async () => {
     selectQueue.push([]); // user query → empty
-    expect(await dashboardRepository.getUserStats('unknown')).toBeNull();
+    expect(await dashboardRepository.getUserStats('unknown', CID)).toBeNull();
   });
 
   it('returns stats with rank and tip count for an existing user', async () => {
-    // Sequential selects: user → tipCount → rank
-    selectQueue.push([{ name: 'Alice', points: 10 }]);
+    // Sequential selects: user → compPoints → tipCount → rank
+    selectQueue.push([{ name: 'Alice' }]);
+    selectQueue.push([{ points: 10 }]);
     selectQueue.push([{ total: 5 }]);
     selectQueue.push([{ rank: 2 }]);
 
-    const result = await dashboardRepository.getUserStats('u1');
+    const result = await dashboardRepository.getUserStats('u1', CID);
 
     expect(result).toEqual({ name: 'Alice', points: 10, totalTips: 5, rank: 2 });
   });
 
-  it('gives rank 1 to the sole leader (no users above)', async () => {
-    selectQueue.push([{ name: 'Alice', points: 20 }]);
-    selectQueue.push([{ total: 8 }]);
-    selectQueue.push([{ rank: 1 }]); // cast(count(*) + 1 as int) = 0 + 1 = 1
+  it('gives rank 1 and 0 points to a user with no competition entries', async () => {
+    selectQueue.push([{ name: 'Bob' }]);
+    selectQueue.push([]);           // no compPoints row → points defaults to 0
+    selectQueue.push([{ total: 0 }]);
+    selectQueue.push([{ rank: 1 }]);
 
-    const result = await dashboardRepository.getUserStats('u1');
+    const result = await dashboardRepository.getUserStats('u2', CID);
 
+    expect(result?.points).toBe(0);
     expect(result?.rank).toBe(1);
   });
 });
@@ -101,7 +107,7 @@ describe('dashboardRepository.get', () => {
 
   it('returns only upcoming matches when userId is null (unauthenticated)', async () => {
     selectQueue.push([UPCOMING_MATCH]); // getUpcomingMatches
-    const result = await dashboardRepository.get(null);
+    const result = await dashboardRepository.get(CID, null);
 
     expect(result.upcomingMatches).toEqual([UPCOMING_MATCH]);
     expect(result.userStats).toBeNull();
@@ -109,19 +115,20 @@ describe('dashboardRepository.get', () => {
   });
 
   it('returns full dashboard data for an authenticated user', async () => {
-    // Call order inside Promise.all:
-    //   1. getUpcomingMatches()  → db.select() → queue[0] (no internal await)
-    //   2. getUserStats()        → db.select() → queue[1], suspends at first await
-    //   3. getRecentTips()       → db.select() → queue[2] (no internal await)
-    //   getUserStats resumes  → db.select() → queue[3] (tipCount)
-    //   getUserStats resumes  → db.select() → queue[4] (rank)
-    selectQueue.push([UPCOMING_MATCH]);                    // upcoming
-    selectQueue.push([{ name: 'Alice', points: 10 }]);    // user
-    selectQueue.push([RECENT_TIP]);                        // recent tips
-    selectQueue.push([{ total: 3 }]);                      // tipCount
-    selectQueue.push([{ rank: 1 }]);                       // rank
+    // Promise.all fires all three functions; getUserStats does 4 internal selects.
+    // db.select() call order:
+    //   [0] getUpcomingMatches (synchronous before first await)
+    //   [1] getUserStats — user select, then suspends at first await
+    //   [2] getRecentTips (synchronous before first await)
+    //   getUserStats resumes: [3] compPoints, [4] tipCount, [5] rank
+    selectQueue.push([UPCOMING_MATCH]);                 // [0]
+    selectQueue.push([{ name: 'Alice' }]);              // [1] user
+    selectQueue.push([RECENT_TIP]);                     // [2]
+    selectQueue.push([{ points: 10 }]);                 // [3] compPoints
+    selectQueue.push([{ total: 3 }]);                   // [4] tipCount
+    selectQueue.push([{ rank: 1 }]);                    // [5] rank
 
-    const result = await dashboardRepository.get('u1');
+    const result = await dashboardRepository.get(CID, 'u1');
 
     expect(result.upcomingMatches).toEqual([UPCOMING_MATCH]);
     expect(result.userStats).toEqual({ name: 'Alice', points: 10, totalTips: 3, rank: 1 });

@@ -1,9 +1,26 @@
 import { pgTable, text, timestamp, integer, uuid, boolean, pgEnum, uniqueIndex, index } from 'drizzle-orm/pg-core';
 
 export const matchStatusEnum = pgEnum('match_status', ['scheduled', 'live', 'completed']);
+export const competitionStatusEnum = pgEnum('competition_status', ['upcoming', 'active', 'completed']);
+
+// ─── Competitions ─────────────────────────────────────────────────────────────
+
+export const competitions = pgTable('competitions', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  name: text('name').notNull(),
+  slug: text('slug').notNull().unique(), // e.g. "wc-2026", "euro-2024"
+  sport: text('sport').notNull().default('football'),
+  startDate: timestamp('start_date', { withTimezone: true }).notNull(),
+  endDate: timestamp('end_date', { withTimezone: true }).notNull(),
+  status: competitionStatusEnum('status').default('upcoming').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// ─── Matches ──────────────────────────────────────────────────────────────────
 
 export const matches = pgTable('matches', {
   id: uuid('id').defaultRandom().primaryKey(),
+  competitionId: uuid('competition_id').notNull().references(() => competitions.id, { onDelete: 'cascade' }),
   homeTeam: text('home_team').notNull(),
   awayTeam: text('away_team').notNull(),
   group: text('group'),
@@ -15,6 +32,7 @@ export const matches = pgTable('matches', {
 }, (t) => [
   index('matches_status_idx').on(t.status),
   index('matches_date_idx').on(t.matchDate),
+  index('matches_competition_idx').on(t.competitionId),
 ]);
 
 // ─── Better Auth tables ───────────────────────────────────────────────────────
@@ -25,7 +43,7 @@ export const users = pgTable('user', {
   email: text('email').notNull().unique(),
   emailVerified: boolean('emailVerified').notNull().default(false),
   image: text('image'),
-  points: integer('points').default(0).notNull(),
+  points: integer('points').default(0).notNull(), // global total across all competitions
   createdAt: timestamp('createdAt').notNull(),
   updatedAt: timestamp('updatedAt').notNull(),
 });
@@ -66,6 +84,8 @@ export const verifications = pgTable('verification', {
   updatedAt: timestamp('updatedAt'),
 });
 
+// ─── Tips ─────────────────────────────────────────────────────────────────────
+
 export const tips = pgTable('tips', {
   id: uuid('id').defaultRandom().primaryKey(),
   userId: text('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
@@ -81,8 +101,21 @@ export const tips = pgTable('tips', {
   index('tips_user_idx').on(t.userId),
 ]);
 
+// ─── Per-competition points (drives leaderboards) ─────────────────────────────
+
+export const userCompetitionPoints = pgTable('user_competition_points', {
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  competitionId: uuid('competition_id').notNull().references(() => competitions.id, { onDelete: 'cascade' }),
+  points: integer('points').default(0).notNull(),
+}, (t) => [
+  uniqueIndex('user_competition_points_unique_idx').on(t.userId, t.competitionId),
+]);
+
+// ─── Leagues ──────────────────────────────────────────────────────────────────
+
 export const leagues = pgTable('leagues', {
   id: uuid('id').defaultRandom().primaryKey(),
+  competitionId: uuid('competition_id').notNull().references(() => competitions.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   inviteCode: text('invite_code').notNull().unique(),
   ownerId: text('owner_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
@@ -97,6 +130,8 @@ export const leagueMembers = pgTable('league_members', {
 }, (t) => [
   uniqueIndex('league_members_unique_idx').on(t.leagueId, t.userId),
 ]);
+
+// ─── AI Insights ──────────────────────────────────────────────────────────────
 
 export const aiMatchInsights = pgTable('ai_match_insights', {
   matchId: uuid('match_id').references(() => matches.id, { onDelete: 'cascade' }).primaryKey(),

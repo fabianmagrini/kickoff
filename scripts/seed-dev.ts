@@ -10,7 +10,8 @@
 
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { matches } from '../src/db/schema.ts';
+import { matches, competitions } from '../src/db/schema.ts';
+import { eq } from 'drizzle-orm';
 
 if (!process.env.DATABASE_URL) {
   console.error('DATABASE_URL is not set. Copy .env.example to .env first.');
@@ -68,43 +69,50 @@ function buildGroupFixtures(
   group: string,
   [a, b, c, d]: [string, string, string, string],
   venueOffset: number,
+  competitionId: string,
 ): MatchInsert[] {
-  // Standard round-robin pairings across 3 matchdays
   const pairings: [[string, string], [string, string]][] = [
     [[a, b], [c, d]],
     [[a, c], [b, d]],
-    [[a, d], [b, c]], // simultaneous on matchday 3
+    [[a, d], [b, c]],
   ];
 
   return pairings.flatMap(([[h1, a1], [h2, a2]], matchday) => [
     {
-      homeTeam: h1,
-      awayTeam: a1,
-      group,
+      competitionId,
+      homeTeam: h1, awayTeam: a1, group,
       venue: VENUES[(venueOffset * 2) % VENUES.length],
       matchDate: new Date(MATCHDAY_BASE[matchday]),
-      status: 'scheduled' as const,
-      homeScore: null,
-      awayScore: null,
+      status: 'scheduled' as const, homeScore: null, awayScore: null,
     },
     {
-      homeTeam: h2,
-      awayTeam: a2,
-      group,
+      competitionId,
+      homeTeam: h2, awayTeam: a2, group,
       venue: VENUES[(venueOffset * 2 + 1) % VENUES.length],
       matchDate: new Date(MATCHDAY_BASE[matchday].getTime() + 3 * 60 * 60 * 1000),
-      status: 'scheduled' as const,
-      homeScore: null,
-      awayScore: null,
+      status: 'scheduled' as const, homeScore: null, awayScore: null,
     },
   ]);
 }
 
 async function main() {
-  const fixtures: MatchInsert[] = [];
+  // Ensure WC 2026 competition exists
+  let [wc2026] = await db.select().from(competitions).where(eq(competitions.slug, 'wc-2026'));
+  if (!wc2026) {
+    [wc2026] = await db.insert(competitions).values({
+      name: 'FIFA World Cup 2026',
+      slug: 'wc-2026',
+      sport: 'football',
+      startDate: new Date('2026-06-11T00:00:00Z'),
+      endDate: new Date('2026-07-19T23:59:59Z'),
+      status: 'active',
+    }).returning();
+    console.log(`Created competition: ${wc2026.name}`);
+  }
 
+  const fixtures: MatchInsert[] = [];
   Object.entries(GROUPS).forEach(([group, teams], i) => {
-    fixtures.push(...buildGroupFixtures(group, teams, i));
+    fixtures.push(...buildGroupFixtures(group, teams, i, wc2026.id));
   });
 
   // Mark two Group A matches as completed so scoring can be tested immediately
@@ -125,9 +133,7 @@ async function main() {
 
   console.log(`Inserting ${fixtures.length} group stage fixtures...`);
   await db.insert(matches).values(fixtures);
-  console.log(
-    `Done. ${fixtures.length} matches seeded (2 completed in Group A for scoring tests).`,
-  );
+  console.log(`Done. ${fixtures.length} matches seeded (2 completed in Group A for scoring tests).`);
 }
 
 main().catch((err) => {

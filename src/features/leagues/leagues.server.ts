@@ -10,11 +10,12 @@ async function requireAuth() {
   return session.user;
 }
 
-/** Returns all leagues the authenticated user belongs to. Requires auth. */
+/** Returns all leagues the authenticated user belongs to in a competition. Requires auth. */
 export const getMyLeaguesFn = createServerFn({ method: 'GET' })
-  .handler(async () => {
+  .inputValidator((competitionId: string) => competitionId)
+  .handler(async ({ data: competitionId }) => {
     const user = await requireAuth();
-    return leaguesRepository.getMyLeagues(user.id);
+    return leaguesRepository.getMyLeagues(user.id, competitionId);
   });
 
 /** Returns league detail for a member. Throws if user is not a member. Requires auth. */
@@ -37,14 +38,14 @@ export const getLeagueLeaderboardFn = createServerFn({ method: 'GET' })
     return leaguesRepository.getLeaderboard(leagueId);
   });
 
-/** Creates a new league and adds the creator as the first member. Requires auth. */
+/** Creates a new league in a competition and adds the creator as the first member. Requires auth. */
 export const createLeagueFn = createServerFn({ method: 'POST' })
   .inputValidator((data: unknown) =>
-    z.object({ name: z.string().min(1).max(50) }).parse(data),
+    z.object({ name: z.string().min(1).max(50), competitionId: z.string().uuid() }).parse(data),
   )
   .handler(async ({ data }) => {
     const user = await requireAuth();
-    return leaguesRepository.create(data.name, user.id);
+    return leaguesRepository.create(data.name, user.id, data.competitionId);
   });
 
 /** Joins a league by invite code. Throws if code is invalid or user is already a member. Requires auth. */

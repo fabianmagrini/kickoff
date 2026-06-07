@@ -2,13 +2,19 @@ import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-ro
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { myLeaguesQueryOptions } from '@/features/leagues/leagues.queries';
+import { competitionQueryOptions } from '@/features/competitions/competitions.queries';
 import { joinLeagueFn } from '@/features/leagues/leagues.server';
 import { RouteError } from '@/components/route-error';
 
-export const Route = createFileRoute('/leagues/join')({
-  loader: async ({ context: { queryClient } }) => {
+export const Route = createFileRoute('/competitions/$competitionId/leagues/join')({
+  loader: async ({ context: { queryClient }, params }) => {
+    const { competitionId } = params;
     try {
-      return await queryClient.ensureQueryData(myLeaguesQueryOptions);
+      const [competition] = await Promise.all([
+        queryClient.ensureQueryData(competitionQueryOptions(competitionId)),
+        queryClient.ensureQueryData(myLeaguesQueryOptions(competitionId)),
+      ]);
+      return competition;
     } catch (err) {
       if (err instanceof Error && err.message === 'Unauthorized') {
         throw redirect({ to: '/login' });
@@ -21,6 +27,9 @@ export const Route = createFileRoute('/leagues/join')({
 });
 
 function JoinPage() {
+  const competition = Route.useLoaderData();
+  const { params } = Route.useMatch();
+  const { competitionId } = params;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [code, setCode] = useState('');
@@ -28,8 +37,11 @@ function JoinPage() {
   const { mutate: join, isPending, error } = useMutation({
     mutationFn: () => joinLeagueFn({ data: { inviteCode: code } }),
     onSuccess: (league) => {
-      queryClient.invalidateQueries({ queryKey: ['leagues', 'mine'] });
-      navigate({ to: '/leagues/$leagueId', params: { leagueId: league.id } });
+      queryClient.invalidateQueries({ queryKey: ['leagues', 'mine', competitionId] });
+      navigate({
+        to: '/competitions/$competitionId/leagues/$leagueId',
+        params: { competitionId, leagueId: league.id },
+      });
     },
   });
 
@@ -37,7 +49,8 @@ function JoinPage() {
     <div className="p-6 max-w-md mx-auto space-y-6">
       <div>
         <Link
-          to="/leagues"
+          to="/competitions/$competitionId/leagues"
+          params={{ competitionId }}
           className="text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
           ← Leagues
@@ -50,9 +63,7 @@ function JoinPage() {
 
       <div className="border rounded-xl p-5 space-y-4">
         <div className="space-y-2">
-          <label htmlFor="invite-code" className="text-sm font-medium">
-            Invite code
-          </label>
+          <label htmlFor="invite-code" className="text-sm font-medium">Invite code</label>
           <input
             id="invite-code"
             type="text"

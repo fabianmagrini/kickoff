@@ -11,6 +11,14 @@ async function waitForHydration(page: Page) {
   }, { timeout: 10_000 });
 }
 
+async function getCompetitionId(page: Page): Promise<string> {
+  await page.goto('/');
+  await page.waitForURL(/\/competitions\/.+/, { timeout: 10_000 });
+  const match = page.url().match(/\/competitions\/([^/]+)/);
+  if (!match) throw new Error('Could not extract competitionId from URL');
+  return match[1];
+}
+
 /**
  * Authenticate via the login form. Tries sign-in first (fast path for tests
  * 2+ in a run where the user already exists), falls back to sign-up.
@@ -19,17 +27,16 @@ async function authenticate(page: Page) {
   await page.goto('/login');
   await waitForHydration(page);
 
-  // Fast path: sign-in (works for all tests after the first in a run).
   await page.getByLabel('Email').fill(TEST_EMAIL);
   await page.getByLabel('Password').fill(TEST_PASSWORD);
   await page.getByRole('button', { name: 'Sign in' }).click();
 
   await Promise.race([
-    page.waitForURL('/', { timeout: 5_000 }),
+    page.waitForURL(/\/competitions\/.+/, { timeout: 5_000 }),
     page.waitForSelector('.text-destructive', { timeout: 5_000 }),
   ]).catch(() => {});
 
-  if (new URL(page.url()).pathname === '/') return;
+  if (/\/competitions\//.test(page.url())) return;
 
   // Slow path: user doesn't exist yet — sign up.
   await page.goto('/login');
@@ -39,40 +46,39 @@ async function authenticate(page: Page) {
   await page.getByLabel('Email').fill(TEST_EMAIL);
   await page.getByLabel('Password').fill(TEST_PASSWORD);
   await page.getByRole('button', { name: 'Create account' }).click();
-  await page.waitForURL('/', { timeout: 10_000 });
+  await page.waitForURL(/\/competitions\/.+/, { timeout: 10_000 });
 }
 
 /** Navigate to the first scheduled match. Returns false if none are seeded. */
 async function goToScheduledMatch(page: Page): Promise<boolean> {
-  await page.goto('/matches');
+  const competitionId = await getCompetitionId(page);
+  await page.goto(`/competitions/${competitionId}/matches`);
   const link = page.locator('a[href^="/matches/"]').filter({ hasText: 'vs' }).first();
   if (await link.count() === 0) return false;
   await link.click();
   await page.waitForURL(/\/matches\/.+/);
   await expect(page.getByRole('heading', { name: /your tip/i })).toBeVisible();
-  // Wait for background refetches (staleTime:0 on userTipQueryOptions) to settle
-  // before interacting with the form — avoids mid-fill component remounts that
-  // reset React state and leave the submit button disabled.
   await page.waitForLoadState('networkidle');
   return true;
 }
 
 test('unauthenticated user sees sign-in prompt on a scheduled match', async ({ page }) => {
-  await page.goto('/matches');
+  const competitionId = await getCompetitionId(page);
+  await page.goto(`/competitions/${competitionId}/matches`);
   const link = page.locator('a[href^="/matches/"]').filter({ hasText: 'vs' }).first();
   test.skip(await link.count() === 0, 'No scheduled matches — run npm run db:seed:dev');
 
   await link.click();
   await page.waitForURL(/\/matches\/.+/);
   await expect(page.getByText('Sign in to submit a tip')).toBeVisible();
-  // Scope to the tip section to avoid matching the navbar "Sign in" link.
   await expect(
     page.locator('div:has-text("Sign in to submit a tip")').getByRole('link', { name: 'Sign in' })
   ).toHaveAttribute('href', /\/login/);
 });
 
 test('sign-in prompt link navigates to the login page', async ({ page }) => {
-  await page.goto('/matches');
+  const competitionId = await getCompetitionId(page);
+  await page.goto(`/competitions/${competitionId}/matches`);
   const link = page.locator('a[href^="/matches/"]').filter({ hasText: 'vs' }).first();
   test.skip(await link.count() === 0, 'No scheduled matches — run npm run db:seed:dev');
 
@@ -104,7 +110,7 @@ test('submit button stays disabled until both scores are filled', async ({ page 
   const button = page.getByRole('button', { name: 'Lock in Tip' });
   await expect(button).toBeDisabled();
   await inputs.nth(0).fill('2');
-  await expect(button).toBeDisabled(); // still needs away score
+  await expect(button).toBeDisabled();
   await inputs.nth(1).fill('1');
   await expect(button).toBeEnabled();
 });
@@ -112,9 +118,6 @@ test('submit button stays disabled until both scores are filled', async ({ page 
 test('submitted tip appears optimistically before the server responds', async ({ page }) => {
   await authenticate(page);
 
-  // Delay submitTipFn POST by 1.5 s then return 500. The delay lets us assert
-  // the optimistic state while the request is in flight; the 500 avoids
-  // creating a real tip that would break the rollback test.
   await page.route('**/_serverFn/**', async (route) => {
     if (route.request().method() === 'POST') {
       await new Promise(r => setTimeout(r, 1500));
@@ -133,7 +136,6 @@ test('submitted tip appears optimistically before the server responds', async ({
   await inputs.nth(1).fill('1');
   await page.getByRole('button', { name: 'Lock in Tip' }).click();
 
-  // Optimistic update must appear within the 1.5 s window.
   await expect(page.getByText('Your tip: 2 – 1')).toBeVisible({ timeout: 500 });
   await expect(page.getByText('Tips are locked once submitted.')).toBeVisible();
 });
@@ -158,7 +160,6 @@ test('rolls back to the form and shows an error when submission fails', async ({
   await inputs.nth(1).fill('0');
   await page.getByRole('button', { name: 'Lock in Tip' }).click();
 
-  // Form must be restored and an error message shown after rollback.
   await expect(page.getByRole('button', { name: 'Lock in Tip' })).toBeVisible({ timeout: 5_000 });
   await expect(page.locator('.text-destructive')).toBeVisible();
 });
@@ -175,11 +176,9 @@ test('successful submission locks the form and persists after reload', async ({ 
   await inputs.nth(1).fill('0');
   await page.getByRole('button', { name: 'Lock in Tip' }).click();
 
-  // Locked state appears immediately (optimistic update).
   await expect(page.getByText('Your tip: 1 – 0')).toBeVisible({ timeout: 5_000 });
   await expect(page.getByText('Tips are locked once submitted.')).toBeVisible();
 
-  // Reload — tip must still be locked (server-persisted).
   await page.goto(matchUrl);
   await page.waitForLoadState('networkidle');
   await expect(page.getByText('Your tip: 1 – 0')).toBeVisible({ timeout: 5_000 });

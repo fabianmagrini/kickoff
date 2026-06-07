@@ -1,14 +1,28 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
+
+async function getCompetitionId(page: Page): Promise<string> {
+  await page.goto('/');
+  await page.waitForURL(/\/competitions\/.+/, { timeout: 10_000 });
+  const match = page.url().match(/\/competitions\/([^/]+)/);
+  if (!match) throw new Error('Could not extract competitionId from URL');
+  return match[1];
+}
+
+async function gotoFixtures(page: Page): Promise<string> {
+  const competitionId = await getCompetitionId(page);
+  await page.goto(`/competitions/${competitionId}/matches`);
+  return competitionId;
+}
 
 test('fixture list page renders the heading', async ({ page }) => {
-  await page.goto('/matches');
+  await gotoFixtures(page);
   await expect(
-    page.getByRole('heading', { level: 1, name: /world cup 2026 fixtures/i }),
+    page.getByRole('heading', { level: 1, name: /fixtures/i }),
   ).toBeVisible();
 });
 
 test('unauthenticated user sees sign-in prompt on match detail', async ({ page }) => {
-  await page.goto('/matches');
+  await gotoFixtures(page);
   const firstMatch = page.getByRole('link', { name: /vs/i }).first();
   await firstMatch.click();
   await expect(page.getByRole('heading', { name: /your tip/i })).toBeVisible();
@@ -16,37 +30,34 @@ test('unauthenticated user sees sign-in prompt on match detail', async ({ page }
 });
 
 test('match detail page shows AI Co-Pilot section', async ({ page }) => {
-  await page.goto('/matches');
+  await gotoFixtures(page);
   const firstMatch = page.getByRole('link', { name: /vs/i }).first();
   await firstMatch.click();
   await expect(page.getByRole('heading', { name: /ai co-pilot/i })).toBeVisible();
 });
 
 test('fixture list renders match rows grouped by stage', async ({ page }) => {
-  await page.goto('/matches');
+  await gotoFixtures(page);
   const matchLinks = page.locator('a[href^="/matches/"]');
   test.skip(await matchLinks.count() === 0, 'No matches seeded — run npm run db:seed:dev');
   await expect(matchLinks.first()).toBeVisible();
-  // Group headings are rendered as uppercase h2s (e.g. "GROUP A")
   await expect(page.getByRole('heading', { level: 2, name: /group/i }).first()).toBeVisible();
 });
 
 test('completed status filter shows matches with scores', async ({ page }) => {
-  await page.goto('/matches');
+  await gotoFixtures(page);
   const matchLinks = page.locator('a[href^="/matches/"]');
   test.skip(await matchLinks.count() === 0, 'No matches seeded — run npm run db:seed:dev');
 
   await page.getByRole('button', { name: 'Completed' }).click();
   const completedLinks = page.locator('a[href^="/matches/"]');
   test.skip(await completedLinks.count() === 0, 'No completed matches seeded');
-  // Completed rows show a score (digit – digit), not "vs"
   await expect(page.locator('text=/\\d+ – \\d+/').first()).toBeVisible();
 });
 
 test('live status filter shows empty state when no live matches', async ({ page }) => {
-  await page.goto('/matches');
+  await gotoFixtures(page);
   await page.getByRole('button', { name: 'Live' }).click();
-  // Either live matches are shown or the empty-state message appears
   const hasLiveMatches = await page.locator('a[href^="/matches/"]').count() > 0;
   if (!hasLiveMatches) {
     await expect(page.getByText(/no live matches/i)).toBeVisible();
@@ -60,18 +71,16 @@ test('invalid match ID shows error boundary', async ({ page }) => {
 });
 
 test('Consult Co-Pilot button shows analysing state while request is in flight', async ({ page }) => {
-  await page.goto('/matches');
+  await gotoFixtures(page);
   const firstMatch = page.getByRole('link', { name: /vs/i }).first();
   test.skip(await firstMatch.count() === 0, 'No scheduled matches — run npm run db:seed:dev');
   await firstMatch.click();
   await page.waitForURL(/\/matches\/.+/);
   await page.waitForLoadState('networkidle');
 
-  // If there is already a cached insight, skip (button won't be present)
   const hasButton = await page.getByRole('button', { name: /consult co-pilot/i }).isVisible();
   test.skip(!hasButton, 'Insight already cached for this match — loading state test not applicable');
 
-  // Delay the POST so we can assert the loading state before it resolves
   await page.route('**/_serverFn/**', async (route) => {
     if (route.request().method() === 'POST') {
       await new Promise(r => setTimeout(r, 2000));
@@ -87,7 +96,7 @@ test('Consult Co-Pilot button shows analysing state while request is in flight',
 });
 
 test('cached insight loads without button on hard reload', async ({ page }) => {
-  await page.goto('/matches');
+  await gotoFixtures(page);
   const firstMatch = page.getByRole('link', { name: /vs/i }).first();
   test.skip(await firstMatch.count() === 0, 'No scheduled matches — run npm run db:seed:dev');
   await firstMatch.click();
@@ -95,11 +104,9 @@ test('cached insight loads without button on hard reload', async ({ page }) => {
   const matchUrl = page.url();
   await page.waitForLoadState('networkidle');
 
-  // Skip if no insight is cached for this match
   const hasInsight = await page.getByText(/Home Win/i).isVisible();
   test.skip(!hasInsight, 'No cached insight for this match — click Consult Co-Pilot first');
 
-  // Hard reload: useQuery fetches getCachedInsightFn from DB and shows insight
   await page.goto(matchUrl);
   await page.waitForLoadState('networkidle');
   await expect(page.getByText(/Home Win/i)).toBeVisible({ timeout: 5_000 });

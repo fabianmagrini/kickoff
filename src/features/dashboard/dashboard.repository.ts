@@ -1,6 +1,6 @@
 import { db } from '@/db';
-import { matches, tips, users } from '@/db/schema';
-import { asc, desc, eq, gt, ne, sql } from 'drizzle-orm';
+import { matches, tips, users, userCompetitionPoints } from '@/db/schema';
+import { asc, desc, eq, gt, ne, and, sql } from 'drizzle-orm';
 
 export type UpcomingMatch = {
   id: string;
@@ -39,7 +39,7 @@ export type DashboardData = {
 };
 
 export const dashboardRepository = {
-  getUpcomingMatches: async (limit = 5): Promise<UpcomingMatch[]> =>
+  getUpcomingMatches: async (competitionId: string, limit = 5): Promise<UpcomingMatch[]> =>
     db
       .select({
         id: matches.id,
@@ -50,11 +50,11 @@ export const dashboardRepository = {
         venue: matches.venue,
       })
       .from(matches)
-      .where(ne(matches.status, 'completed'))
+      .where(and(eq(matches.competitionId, competitionId), ne(matches.status, 'completed')))
       .orderBy(asc(matches.matchDate))
       .limit(limit),
 
-  getRecentTips: async (userId: string, limit = 5): Promise<RecentTip[]> =>
+  getRecentTips: async (userId: string, competitionId: string, limit = 5): Promise<RecentTip[]> =>
     db
       .select({
         id: tips.id,
@@ -71,41 +71,59 @@ export const dashboardRepository = {
       })
       .from(tips)
       .innerJoin(matches, eq(tips.matchId, matches.id))
-      .where(eq(tips.userId, userId))
+      .where(and(eq(tips.userId, userId), eq(matches.competitionId, competitionId)))
       .orderBy(desc(tips.createdAt))
       .limit(limit),
 
-  getUserStats: async (userId: string): Promise<UserStats | null> => {
+  getUserStats: async (userId: string, competitionId: string): Promise<UserStats | null> => {
     const [user] = await db
-      .select({ name: users.name, points: users.points })
+      .select({ name: users.name })
       .from(users)
       .where(eq(users.id, userId));
 
     if (!user) return null;
 
+    const [compPoints] = await db
+      .select({ points: userCompetitionPoints.points })
+      .from(userCompetitionPoints)
+      .where(
+        and(
+          eq(userCompetitionPoints.userId, userId),
+          eq(userCompetitionPoints.competitionId, competitionId),
+        ),
+      );
+
+    const points = compPoints?.points ?? 0;
+
     const [tipCount] = await db
       .select({ total: sql<number>`cast(count(*) as int)` })
       .from(tips)
-      .where(eq(tips.userId, userId));
+      .innerJoin(matches, eq(tips.matchId, matches.id))
+      .where(and(eq(tips.userId, userId), eq(matches.competitionId, competitionId)));
 
     const [rankRow] = await db
       .select({ rank: sql<number>`cast(count(*) + 1 as int)` })
-      .from(users)
-      .where(gt(users.points, user.points));
+      .from(userCompetitionPoints)
+      .where(
+        and(
+          eq(userCompetitionPoints.competitionId, competitionId),
+          gt(userCompetitionPoints.points, points),
+        ),
+      );
 
     return {
       name: user.name,
-      points: user.points,
+      points,
       totalTips: tipCount?.total ?? 0,
       rank: rankRow?.rank ?? 1,
     };
   },
 
-  get: async (userId: string | null): Promise<DashboardData> => {
+  get: async (competitionId: string, userId: string | null): Promise<DashboardData> => {
     const [upcomingMatches, userStats, recentTips] = await Promise.all([
-      dashboardRepository.getUpcomingMatches(),
-      userId ? dashboardRepository.getUserStats(userId) : null,
-      userId ? dashboardRepository.getRecentTips(userId) : [],
+      dashboardRepository.getUpcomingMatches(competitionId),
+      userId ? dashboardRepository.getUserStats(userId, competitionId) : null,
+      userId ? dashboardRepository.getRecentTips(userId, competitionId) : [],
     ]);
     return { upcomingMatches, userStats, recentTips };
   },

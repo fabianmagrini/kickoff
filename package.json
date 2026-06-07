@@ -12,6 +12,7 @@
     "test:e2e:ui": "playwright test --ui",
     "db:seed": "node --env-file=.env --import=tsx/esm scripts/seed-matches.ts",
     "db:seed:dev": "node --env-file=.env --import=tsx/esm scripts/seed-dev.ts",
+    "db:migrate:competitions": "node --env-file=.env --import=tsx/esm scripts/migrate-to-competitions.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",

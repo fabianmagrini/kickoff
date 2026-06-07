@@ -5,7 +5,7 @@ let selectQueue: unknown[] = [];
 
 function makeSelectBuilder(resolveWith: unknown) {
   const builder: Record<string, unknown> = {};
-  for (const m of ['from', 'where', 'orderBy', 'limit', 'innerJoin']) {
+  for (const m of ['from', 'where', 'orderBy', 'limit', 'innerJoin', 'leftJoin']) {
     builder[m] = vi.fn(() => builder);
   }
   builder.then = (resolve: (v: unknown) => void) =>
@@ -37,6 +37,7 @@ vi.mock('drizzle-orm', () => ({
   eq: vi.fn(() => 'eq'),
   and: vi.fn(() => 'and'),
   desc: vi.fn(() => 'desc'),
+  sql: vi.fn(() => 'sql'),
 }));
 
 import { leaguesRepository } from './leagues.repository';
@@ -63,7 +64,7 @@ describe('leaguesRepository', () => {
       insertQueue.push([BASE_LEAGUE]); // leagues insert → returning [league]
       insertQueue.push([]);            // leagueMembers insert → no returning needed
 
-      const result = await leaguesRepository.create('Kickoff Kings', 'u1');
+      const result = await leaguesRepository.create('Kickoff Kings', 'u1', 'comp-1');
 
       expect(result).toEqual(BASE_LEAGUE);
       const { db } = await import('@/db');
@@ -107,12 +108,12 @@ describe('leaguesRepository', () => {
   describe('getMyLeagues', () => {
     it('returns an empty array when the user has no leagues', async () => {
       selectQueue.push([]);
-      expect(await leaguesRepository.getMyLeagues('u1')).toEqual([]);
+      expect(await leaguesRepository.getMyLeagues('u1', 'comp-1')).toEqual([]);
     });
 
     it('returns the leagues the user belongs to', async () => {
       selectQueue.push([BASE_LEAGUE]);
-      expect(await leaguesRepository.getMyLeagues('u1')).toEqual([BASE_LEAGUE]);
+      expect(await leaguesRepository.getMyLeagues('u1', 'comp-1')).toEqual([BASE_LEAGUE]);
     });
   });
 
@@ -133,8 +134,8 @@ describe('leaguesRepository', () => {
   // ── getLeaderboard ───────────────────────────────────────────────────────────
 
   describe('getLeaderboard', () => {
-    it('returns an empty array when the league has no members', async () => {
-      selectQueue.push([]);
+    it('returns an empty array when the league has no competitionId', async () => {
+      selectQueue.push([]); // leagues select → empty (league not found)
       expect(await leaguesRepository.getLeaderboard('l1')).toEqual([]);
     });
 
@@ -143,7 +144,8 @@ describe('leaguesRepository', () => {
         { id: 'u1', name: 'Alice', points: 12 },
         { id: 'u2', name: 'Bob', points: 7 },
       ];
-      selectQueue.push(rows);
+      selectQueue.push([{ ...BASE_LEAGUE, competitionId: 'comp-1' }]); // league lookup
+      selectQueue.push(rows); // leaderboard select
       expect(await leaguesRepository.getLeaderboard('l1')).toEqual(rows);
     });
   });

@@ -1,5 +1,5 @@
 import { db } from '@/db';
-import { tips, matches, users } from '@/db/schema';
+import { tips, matches, users, userCompetitionPoints } from '@/db/schema';
 import { eq, isNull, isNotNull, and, sum } from 'drizzle-orm';
 import { calculatePoints } from '@/features/tips/scoring';
 
@@ -11,6 +11,7 @@ export type ScoringResult = {
 /**
  * Score all unscored tips for completed matches and update user point totals.
  * Safe to run multiple times — tips with scoredAt set are skipped.
+ * Updates both users.points (global total) and userCompetitionPoints (per-competition).
  * Processes each match sequentially; partial runs are recoverable on the next call.
  */
 export async function scoreCompletedMatches(): Promise<ScoringResult> {
@@ -57,20 +58,44 @@ export async function scoreCompletedMatches(): Promise<ScoringResult> {
     tipsScored += unscoredTips.length;
     matchesProcessed++;
 
-    // Recalculate total points for each affected user from all their scored tips
     for (const userId of affectedUserIds) {
-      const [result] = await db
+      // Recalculate global total from all scored tips
+      const [globalResult] = await db
         .select({ total: sum(tips.pointsEarned) })
         .from(tips)
-        .where(and(
-          eq(tips.userId, userId),
-          isNotNull(tips.scoredAt),
-        ));
+        .where(and(eq(tips.userId, userId), isNotNull(tips.scoredAt)));
+
+      const globalPoints = Number(globalResult?.total ?? '0');
 
       await db
         .update(users)
-        .set({ points: Number(result?.total ?? '0') })
+        .set({ points: globalPoints })
         .where(eq(users.id, userId));
+
+      // Recalculate competition-scoped total
+      if (match.competitionId) {
+        const [compResult] = await db
+          .select({ total: sum(tips.pointsEarned) })
+          .from(tips)
+          .innerJoin(matches, eq(tips.matchId, matches.id))
+          .where(
+            and(
+              eq(tips.userId, userId),
+              eq(matches.competitionId, match.competitionId),
+              isNotNull(tips.scoredAt),
+            ),
+          );
+
+        const compPoints = Number(compResult?.total ?? '0');
+
+        await db
+          .insert(userCompetitionPoints)
+          .values({ userId, competitionId: match.competitionId, points: compPoints })
+          .onConflictDoUpdate({
+            target: [userCompetitionPoints.userId, userCompetitionPoints.competitionId],
+            set: { points: compPoints },
+          });
+      }
     }
   }
 

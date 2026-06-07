@@ -12,7 +12,7 @@ async function signUp(page: Page, name: string) {
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Password').fill('TestPass123!');
   await page.getByRole('button', { name: 'Create account' }).click();
-  await page.waitForURL('/', { timeout: 15_000 });
+  await page.waitForURL(/\/competitions\//, { timeout: 15_000 });
 }
 
 test('unauthenticated visitor to /profile is redirected to /login', async ({ page }) => {

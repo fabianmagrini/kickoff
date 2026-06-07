@@ -104,6 +104,9 @@ function TipRow({ tip }: { tip: ProfileTip }) {
           {tip.homeTeam} vs {tip.awayTeam}
         </p>
         <div className="flex items-center gap-2 mt-0.5">
+          {tip.competitionName && (
+            <span className="text-xs text-muted-foreground">{tip.competitionName}</span>
+          )}
           {tip.group && (
             <span className="text-xs text-muted-foreground">Group {tip.group}</span>
           )}

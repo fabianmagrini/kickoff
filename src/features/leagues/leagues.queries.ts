@@ -1,11 +1,12 @@
 import { queryOptions } from '@tanstack/react-query';
 import { getMyLeaguesFn, getLeagueFn, getLeagueLeaderboardFn } from './leagues.server';
 
-export const myLeaguesQueryOptions = queryOptions({
-  queryKey: ['leagues', 'mine'],
-  queryFn: () => getMyLeaguesFn(),
-  staleTime: 0,
-});
+export const myLeaguesQueryOptions = (competitionId: string) =>
+  queryOptions({
+    queryKey: ['leagues', 'mine', competitionId],
+    queryFn: () => getMyLeaguesFn({ data: competitionId }),
+    staleTime: 0,
+  });
 
 export const leagueQueryOptions = (leagueId: string) =>
   queryOptions({

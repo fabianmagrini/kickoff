@@ -1,5 +1,5 @@
 import { db } from '@/db';
-import { matches, tips, users } from '@/db/schema';
+import { matches, tips, users, competitions } from '@/db/schema';
 import { desc, eq, gt, sql } from 'drizzle-orm';
 
 export type ProfileTip = {
@@ -16,6 +16,7 @@ export type ProfileTip = {
   matchStatus: string;
   homeScore: number | null;
   awayScore: number | null;
+  competitionName: string | null;
 };
 
 export type ProfileData = {
@@ -57,9 +58,11 @@ export const profileRepository = {
           matchStatus: matches.status,
           homeScore: matches.homeScore,
           awayScore: matches.awayScore,
+          competitionName: competitions.name,
         })
         .from(tips)
         .innerJoin(matches, eq(tips.matchId, matches.id))
+        .innerJoin(competitions, eq(matches.competitionId, competitions.id))
         .where(eq(tips.userId, userId))
         .orderBy(desc(matches.matchDate)),
     ]);

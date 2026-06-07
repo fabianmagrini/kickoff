@@ -54,25 +54,11 @@ function Navbar() {
         </Link>
         <div className="flex items-center gap-4 text-sm">
           <Link
-            to="/matches"
+            to="/competitions"
             className="text-muted-foreground hover:text-foreground transition-colors"
             activeProps={{ className: 'text-foreground font-medium' }}
           >
-            Fixtures
-          </Link>
-          <Link
-            to="/leaderboard"
-            className="text-muted-foreground hover:text-foreground transition-colors"
-            activeProps={{ className: 'text-foreground font-medium' }}
-          >
-            Leaderboard
-          </Link>
-          <Link
-            to="/leagues"
-            className="text-muted-foreground hover:text-foreground transition-colors"
-            activeProps={{ className: 'text-foreground font-medium' }}
-          >
-            Leagues
+            Competitions
           </Link>
         </div>
       </div>

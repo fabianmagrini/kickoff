@@ -5,6 +5,7 @@ import { generateObject } from 'ai';
 import { model } from '@/ai';
 import { z } from 'zod';
 import { matchesRepository } from '@/features/matches/matches.repository';
+import { competitionsRepository } from '@/features/competitions/competitions.repository';
 
 export type AiInsight = typeof aiMatchInsights.$inferSelect;
 
@@ -32,10 +33,15 @@ export const insightsRepository = {
     const match = await matchesRepository.getById(matchId);
     if (!match) throw new Error('Match not found');
 
+    const competition = match.competitionId
+      ? await competitionsRepository.getById(match.competitionId)
+      : null;
+    const competitionName = competition?.name ?? 'the competition';
+
     const { object: aiResponse } = await generateObject({
       model,
       schema: insightSchema,
-      prompt: `Analyze the upcoming World Cup 2026 match between ${match.homeTeam} and ${match.awayTeam}.
+      prompt: `Analyze the upcoming ${competitionName} match between ${match.homeTeam} and ${match.awayTeam}.
                Venue: ${match.venue}. Group: ${match.group ?? 'Knockout'}.
                Provide win probabilities for home, away, and draw (must sum to 100),
                predicted winner (or "Draw"), and a concise 3-sentence tactical analysis.`,

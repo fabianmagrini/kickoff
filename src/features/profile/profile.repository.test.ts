@@ -31,6 +31,7 @@ const TIP_ROW = {
   predictedHomeScore: 2, predictedAwayScore: 1,
   pointsEarned: 3, scoredAt: new Date('2026-06-15T22:00:00Z'),
   matchStatus: 'completed', homeScore: 2, awayScore: 1,
+  competitionName: 'FIFA World Cup 2026',
 };
 
 describe('profileRepository.get', () => {

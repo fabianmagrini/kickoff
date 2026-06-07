@@ -11,16 +11,18 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as LeaderboardRouteImport } from './routes/leaderboard'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as MatchesIndexRouteImport } from './routes/matches/index'
-import { Route as LeaguesIndexRouteImport } from './routes/leagues/index'
+import { Route as CompetitionsIndexRouteImport } from './routes/competitions/index'
 import { Route as MatchesMatchIdRouteImport } from './routes/matches/$matchId'
-import { Route as LeaguesJoinRouteImport } from './routes/leagues/join'
-import { Route as LeaguesLeagueIdRouteImport } from './routes/leagues/$leagueId'
+import { Route as CompetitionsCompetitionIdIndexRouteImport } from './routes/competitions/$competitionId/index'
+import { Route as CompetitionsCompetitionIdLeaderboardRouteImport } from './routes/competitions/$competitionId/leaderboard'
 import { Route as ApiCronScoreRouteImport } from './routes/api/cron/score'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as CompetitionsCompetitionIdMatchesIndexRouteImport } from './routes/competitions/$competitionId/matches/index'
+import { Route as CompetitionsCompetitionIdLeaguesIndexRouteImport } from './routes/competitions/$competitionId/leagues/index'
+import { Route as CompetitionsCompetitionIdLeaguesJoinRouteImport } from './routes/competitions/$competitionId/leagues/join'
+import { Route as CompetitionsCompetitionIdLeaguesLeagueIdRouteImport } from './routes/competitions/$competitionId/leagues/$leagueId'
 
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
@@ -30,11 +32,6 @@ const ProfileRoute = ProfileRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LeaderboardRoute = LeaderboardRouteImport.update({
-  id: '/leaderboard',
-  path: '/leaderboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -47,14 +44,9 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MatchesIndexRoute = MatchesIndexRouteImport.update({
-  id: '/matches/',
-  path: '/matches/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LeaguesIndexRoute = LeaguesIndexRouteImport.update({
-  id: '/leagues/',
-  path: '/leagues/',
+const CompetitionsIndexRoute = CompetitionsIndexRouteImport.update({
+  id: '/competitions/',
+  path: '/competitions/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MatchesMatchIdRoute = MatchesMatchIdRouteImport.update({
@@ -62,16 +54,18 @@ const MatchesMatchIdRoute = MatchesMatchIdRouteImport.update({
   path: '/matches/$matchId',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LeaguesJoinRoute = LeaguesJoinRouteImport.update({
-  id: '/leagues/join',
-  path: '/leagues/join',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LeaguesLeagueIdRoute = LeaguesLeagueIdRouteImport.update({
-  id: '/leagues/$leagueId',
-  path: '/leagues/$leagueId',
-  getParentRoute: () => rootRouteImport,
-} as any)
+const CompetitionsCompetitionIdIndexRoute =
+  CompetitionsCompetitionIdIndexRouteImport.update({
+    id: '/competitions/$competitionId/',
+    path: '/competitions/$competitionId/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const CompetitionsCompetitionIdLeaderboardRoute =
+  CompetitionsCompetitionIdLeaderboardRouteImport.update({
+    id: '/competitions/$competitionId/leaderboard',
+    path: '/competitions/$competitionId/leaderboard',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiCronScoreRoute = ApiCronScoreRouteImport.update({
   id: '/api/cron/score',
   path: '/api/cron/score',
@@ -82,108 +76,146 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CompetitionsCompetitionIdMatchesIndexRoute =
+  CompetitionsCompetitionIdMatchesIndexRouteImport.update({
+    id: '/competitions/$competitionId/matches/',
+    path: '/competitions/$competitionId/matches/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const CompetitionsCompetitionIdLeaguesIndexRoute =
+  CompetitionsCompetitionIdLeaguesIndexRouteImport.update({
+    id: '/competitions/$competitionId/leagues/',
+    path: '/competitions/$competitionId/leagues/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const CompetitionsCompetitionIdLeaguesJoinRoute =
+  CompetitionsCompetitionIdLeaguesJoinRouteImport.update({
+    id: '/competitions/$competitionId/leagues/join',
+    path: '/competitions/$competitionId/leagues/join',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const CompetitionsCompetitionIdLeaguesLeagueIdRoute =
+  CompetitionsCompetitionIdLeaguesLeagueIdRouteImport.update({
+    id: '/competitions/$competitionId/leagues/$leagueId',
+    path: '/competitions/$competitionId/leagues/$leagueId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
-  '/leaderboard': typeof LeaderboardRoute
   '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
-  '/leagues/$leagueId': typeof LeaguesLeagueIdRoute
-  '/leagues/join': typeof LeaguesJoinRoute
   '/matches/$matchId': typeof MatchesMatchIdRoute
-  '/leagues/': typeof LeaguesIndexRoute
-  '/matches/': typeof MatchesIndexRoute
+  '/competitions/': typeof CompetitionsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/score': typeof ApiCronScoreRoute
+  '/competitions/$competitionId/leaderboard': typeof CompetitionsCompetitionIdLeaderboardRoute
+  '/competitions/$competitionId/': typeof CompetitionsCompetitionIdIndexRoute
+  '/competitions/$competitionId/leagues/$leagueId': typeof CompetitionsCompetitionIdLeaguesLeagueIdRoute
+  '/competitions/$competitionId/leagues/join': typeof CompetitionsCompetitionIdLeaguesJoinRoute
+  '/competitions/$competitionId/leagues/': typeof CompetitionsCompetitionIdLeaguesIndexRoute
+  '/competitions/$competitionId/matches/': typeof CompetitionsCompetitionIdMatchesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
-  '/leaderboard': typeof LeaderboardRoute
   '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
-  '/leagues/$leagueId': typeof LeaguesLeagueIdRoute
-  '/leagues/join': typeof LeaguesJoinRoute
   '/matches/$matchId': typeof MatchesMatchIdRoute
-  '/leagues': typeof LeaguesIndexRoute
-  '/matches': typeof MatchesIndexRoute
+  '/competitions': typeof CompetitionsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/score': typeof ApiCronScoreRoute
+  '/competitions/$competitionId/leaderboard': typeof CompetitionsCompetitionIdLeaderboardRoute
+  '/competitions/$competitionId': typeof CompetitionsCompetitionIdIndexRoute
+  '/competitions/$competitionId/leagues/$leagueId': typeof CompetitionsCompetitionIdLeaguesLeagueIdRoute
+  '/competitions/$competitionId/leagues/join': typeof CompetitionsCompetitionIdLeaguesJoinRoute
+  '/competitions/$competitionId/leagues': typeof CompetitionsCompetitionIdLeaguesIndexRoute
+  '/competitions/$competitionId/matches': typeof CompetitionsCompetitionIdMatchesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
-  '/leaderboard': typeof LeaderboardRoute
   '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
-  '/leagues/$leagueId': typeof LeaguesLeagueIdRoute
-  '/leagues/join': typeof LeaguesJoinRoute
   '/matches/$matchId': typeof MatchesMatchIdRoute
-  '/leagues/': typeof LeaguesIndexRoute
-  '/matches/': typeof MatchesIndexRoute
+  '/competitions/': typeof CompetitionsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/score': typeof ApiCronScoreRoute
+  '/competitions/$competitionId/leaderboard': typeof CompetitionsCompetitionIdLeaderboardRoute
+  '/competitions/$competitionId/': typeof CompetitionsCompetitionIdIndexRoute
+  '/competitions/$competitionId/leagues/$leagueId': typeof CompetitionsCompetitionIdLeaguesLeagueIdRoute
+  '/competitions/$competitionId/leagues/join': typeof CompetitionsCompetitionIdLeaguesJoinRoute
+  '/competitions/$competitionId/leagues/': typeof CompetitionsCompetitionIdLeaguesIndexRoute
+  '/competitions/$competitionId/matches/': typeof CompetitionsCompetitionIdMatchesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/admin'
-    | '/leaderboard'
     | '/login'
     | '/profile'
-    | '/leagues/$leagueId'
-    | '/leagues/join'
     | '/matches/$matchId'
-    | '/leagues/'
-    | '/matches/'
+    | '/competitions/'
     | '/api/auth/$'
     | '/api/cron/score'
+    | '/competitions/$competitionId/leaderboard'
+    | '/competitions/$competitionId/'
+    | '/competitions/$competitionId/leagues/$leagueId'
+    | '/competitions/$competitionId/leagues/join'
+    | '/competitions/$competitionId/leagues/'
+    | '/competitions/$competitionId/matches/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/admin'
-    | '/leaderboard'
     | '/login'
     | '/profile'
-    | '/leagues/$leagueId'
-    | '/leagues/join'
     | '/matches/$matchId'
-    | '/leagues'
-    | '/matches'
+    | '/competitions'
     | '/api/auth/$'
     | '/api/cron/score'
+    | '/competitions/$competitionId/leaderboard'
+    | '/competitions/$competitionId'
+    | '/competitions/$competitionId/leagues/$leagueId'
+    | '/competitions/$competitionId/leagues/join'
+    | '/competitions/$competitionId/leagues'
+    | '/competitions/$competitionId/matches'
   id:
     | '__root__'
     | '/'
     | '/admin'
-    | '/leaderboard'
     | '/login'
     | '/profile'
-    | '/leagues/$leagueId'
-    | '/leagues/join'
     | '/matches/$matchId'
-    | '/leagues/'
-    | '/matches/'
+    | '/competitions/'
     | '/api/auth/$'
     | '/api/cron/score'
+    | '/competitions/$competitionId/leaderboard'
+    | '/competitions/$competitionId/'
+    | '/competitions/$competitionId/leagues/$leagueId'
+    | '/competitions/$competitionId/leagues/join'
+    | '/competitions/$competitionId/leagues/'
+    | '/competitions/$competitionId/matches/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
-  LeaderboardRoute: typeof LeaderboardRoute
   LoginRoute: typeof LoginRoute
   ProfileRoute: typeof ProfileRoute
-  LeaguesLeagueIdRoute: typeof LeaguesLeagueIdRoute
-  LeaguesJoinRoute: typeof LeaguesJoinRoute
   MatchesMatchIdRoute: typeof MatchesMatchIdRoute
-  LeaguesIndexRoute: typeof LeaguesIndexRoute
-  MatchesIndexRoute: typeof MatchesIndexRoute
+  CompetitionsIndexRoute: typeof CompetitionsIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiCronScoreRoute: typeof ApiCronScoreRoute
+  CompetitionsCompetitionIdLeaderboardRoute: typeof CompetitionsCompetitionIdLeaderboardRoute
+  CompetitionsCompetitionIdIndexRoute: typeof CompetitionsCompetitionIdIndexRoute
+  CompetitionsCompetitionIdLeaguesLeagueIdRoute: typeof CompetitionsCompetitionIdLeaguesLeagueIdRoute
+  CompetitionsCompetitionIdLeaguesJoinRoute: typeof CompetitionsCompetitionIdLeaguesJoinRoute
+  CompetitionsCompetitionIdLeaguesIndexRoute: typeof CompetitionsCompetitionIdLeaguesIndexRoute
+  CompetitionsCompetitionIdMatchesIndexRoute: typeof CompetitionsCompetitionIdMatchesIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -202,13 +234,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/leaderboard': {
-      id: '/leaderboard'
-      path: '/leaderboard'
-      fullPath: '/leaderboard'
-      preLoaderRoute: typeof LeaderboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -223,18 +248,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/matches/': {
-      id: '/matches/'
-      path: '/matches'
-      fullPath: '/matches/'
-      preLoaderRoute: typeof MatchesIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/leagues/': {
-      id: '/leagues/'
-      path: '/leagues'
-      fullPath: '/leagues/'
-      preLoaderRoute: typeof LeaguesIndexRouteImport
+    '/competitions/': {
+      id: '/competitions/'
+      path: '/competitions'
+      fullPath: '/competitions/'
+      preLoaderRoute: typeof CompetitionsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/matches/$matchId': {
@@ -244,18 +262,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MatchesMatchIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/leagues/join': {
-      id: '/leagues/join'
-      path: '/leagues/join'
-      fullPath: '/leagues/join'
-      preLoaderRoute: typeof LeaguesJoinRouteImport
+    '/competitions/$competitionId/': {
+      id: '/competitions/$competitionId/'
+      path: '/competitions/$competitionId'
+      fullPath: '/competitions/$competitionId/'
+      preLoaderRoute: typeof CompetitionsCompetitionIdIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/leagues/$leagueId': {
-      id: '/leagues/$leagueId'
-      path: '/leagues/$leagueId'
-      fullPath: '/leagues/$leagueId'
-      preLoaderRoute: typeof LeaguesLeagueIdRouteImport
+    '/competitions/$competitionId/leaderboard': {
+      id: '/competitions/$competitionId/leaderboard'
+      path: '/competitions/$competitionId/leaderboard'
+      fullPath: '/competitions/$competitionId/leaderboard'
+      preLoaderRoute: typeof CompetitionsCompetitionIdLeaderboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/cron/score': {
@@ -272,22 +290,57 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/competitions/$competitionId/matches/': {
+      id: '/competitions/$competitionId/matches/'
+      path: '/competitions/$competitionId/matches'
+      fullPath: '/competitions/$competitionId/matches/'
+      preLoaderRoute: typeof CompetitionsCompetitionIdMatchesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/competitions/$competitionId/leagues/': {
+      id: '/competitions/$competitionId/leagues/'
+      path: '/competitions/$competitionId/leagues'
+      fullPath: '/competitions/$competitionId/leagues/'
+      preLoaderRoute: typeof CompetitionsCompetitionIdLeaguesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/competitions/$competitionId/leagues/join': {
+      id: '/competitions/$competitionId/leagues/join'
+      path: '/competitions/$competitionId/leagues/join'
+      fullPath: '/competitions/$competitionId/leagues/join'
+      preLoaderRoute: typeof CompetitionsCompetitionIdLeaguesJoinRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/competitions/$competitionId/leagues/$leagueId': {
+      id: '/competitions/$competitionId/leagues/$leagueId'
+      path: '/competitions/$competitionId/leagues/$leagueId'
+      fullPath: '/competitions/$competitionId/leagues/$leagueId'
+      preLoaderRoute: typeof CompetitionsCompetitionIdLeaguesLeagueIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
-  LeaderboardRoute: LeaderboardRoute,
   LoginRoute: LoginRoute,
   ProfileRoute: ProfileRoute,
-  LeaguesLeagueIdRoute: LeaguesLeagueIdRoute,
-  LeaguesJoinRoute: LeaguesJoinRoute,
   MatchesMatchIdRoute: MatchesMatchIdRoute,
-  LeaguesIndexRoute: LeaguesIndexRoute,
-  MatchesIndexRoute: MatchesIndexRoute,
+  CompetitionsIndexRoute: CompetitionsIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiCronScoreRoute: ApiCronScoreRoute,
+  CompetitionsCompetitionIdLeaderboardRoute:
+    CompetitionsCompetitionIdLeaderboardRoute,
+  CompetitionsCompetitionIdIndexRoute: CompetitionsCompetitionIdIndexRoute,
+  CompetitionsCompetitionIdLeaguesLeagueIdRoute:
+    CompetitionsCompetitionIdLeaguesLeagueIdRoute,
+  CompetitionsCompetitionIdLeaguesJoinRoute:
+    CompetitionsCompetitionIdLeaguesJoinRoute,
+  CompetitionsCompetitionIdLeaguesIndexRoute:
+    CompetitionsCompetitionIdLeaguesIndexRoute,
+  CompetitionsCompetitionIdMatchesIndexRoute:
+    CompetitionsCompetitionIdMatchesIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

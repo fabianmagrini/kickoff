@@ -74,11 +74,13 @@ Repositories may depend on other repositories (e.g. `insightsRepository` calls `
 
 ## Database Schema
 
-- `matches` — fixtures (48 teams, 12 groups A–L, plus knockout rounds)
-- `user` — Better Auth users + aggregated `points`
+- `competitions` — named competitions (slug, sport, status, date range)
+- `matches` — fixtures scoped to a competition (homeTeam, awayTeam, group, venue, scores, status)
+- `user` — Better Auth users + aggregated global `points`
 - `tips` — user score predictions per match
+- `user_competition_points` — per-competition points tally driving leaderboards (userId + competitionId unique)
 - `ai_match_insights` — cached LLM analysis per match
-- `leagues` — invite-code-based private groups (name, owner, unique invite code)
+- `leagues` — invite-code-based private groups scoped to a competition
 - `league_members` — join table linking users to leagues
 
 ## Scoring Rules
@@ -162,6 +164,10 @@ src/
       admin.repository.ts            # DEEP: updateMatch() — updates score + triggers re-scoring
       admin.repository.test.ts       # unit tests (co-located)
       admin.server.ts                # thin: checkIsAdminFn, updateMatchFn (ADMIN_USER_IDS guard)
+    competitions/
+      competitions.repository.ts     # DEEP: getAll(), getById(), getBySlug(), getActive()
+      competitions.server.ts         # thin: getCompetitionsFn, getCompetitionFn, getActiveCompetitionsFn
+      competitions.queries.ts        # competitionsQueryOptions, competitionQueryOptions, activeCompetitionsQueryOptions
     leagues/
       leagues.repository.ts          # DEEP: create(), joinByCode(), getMyLeagues(), getById(), getLeaderboard()
       leagues.repository.test.ts     # unit tests (co-located)
@@ -173,14 +179,20 @@ src/
     login.tsx                        # Sign in / Sign up combined page
     profile.tsx                      # Authenticated user profile + full tip history
     leaderboard.tsx                  # Top 50 users by points
-    admin.tsx                        # Admin match score entry (admin-gated)
-    leagues/
-      index.tsx                      # My leagues list + create form (auth-gated)
-      $leagueId.tsx                  # League detail + scoped leaderboard (member-gated)
-      join.tsx                       # Join by invite code (auth-gated)
+    admin.tsx                        # Admin match score entry with competition selector (admin-gated)
+    competitions/
+      index.tsx                      # All competitions list
+      $competitionId/
+        index.tsx                    # Competition dashboard (upcoming matches, recent tips, stats)
+        matches/
+          index.tsx                  # Competition fixture list
+        leaderboard.tsx              # Competition leaderboard (per-competition points)
+        leagues/
+          index.tsx                  # My leagues in this competition + create form (auth-gated)
+          $leagueId.tsx              # League detail + scoped leaderboard (member-gated)
+          join.tsx                   # Join by invite code (auth-gated)
     matches/
-      index.tsx                      # Fixture list
-      $matchId.tsx                   # Match detail + tip form + AI co-pilot
+      $matchId.tsx                   # Match detail + tip form + AI co-pilot (global — match ID is unique)
     api/
       auth/$.ts                      # Better Auth catch-all
       cron/score.ts                  # POST /api/cron/score — secured scoring trigger
