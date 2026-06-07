@@ -199,8 +199,7 @@ describe('scoreCompletedMatches', () => {
     // m2 tips + sum
     selectQueue.push([{ id: 't2', userId: 'u1', matchId: 'm2', predictedHomeScore: 2, predictedAwayScore: 1, pointsEarned: 0 }]);
     selectQueue.push([{ total: '4' }]);
-    // m3 tips query (reached before chunk check? No — chunk check runs after unscoredTips check)
-    selectQueue.push([{ id: 't3', userId: 'u1', matchId: 'm3', predictedHomeScore: 0, predictedAwayScore: 0, pointsEarned: 0 }]);
+    // m3 hits the chunk guard before its tips are queried — no selectQueue entry needed
 
     const result = await scoreCompletedMatches(2);
 

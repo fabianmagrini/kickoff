@@ -29,6 +29,12 @@ export async function scoreCompletedMatches(chunkSize = 10): Promise<ScoringResu
   for (const match of completedMatches) {
     if (match.homeScore === null || match.awayScore === null) continue;
 
+    // Chunk limit reached — count remaining matches but don't process them
+    if (matchesProcessed >= chunkSize) {
+      remaining++;
+      continue;
+    }
+
     const unscoredTips = await db
       .select()
       .from(tips)
@@ -38,12 +44,6 @@ export async function scoreCompletedMatches(chunkSize = 10): Promise<ScoringResu
       ));
 
     if (unscoredTips.length === 0) continue;
-
-    // Chunk limit reached — count remaining matches but don't process them
-    if (matchesProcessed >= chunkSize) {
-      remaining++;
-      continue;
-    }
 
     const now = new Date();
     const affectedUserIds = new Set<string>();

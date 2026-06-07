@@ -44,8 +44,13 @@ export const adminRepository = {
       .where(eq(matches.id, id))
       .returning();
 
+    if (!updated) throw new Error('Match not found');
+
     if (updated.status === 'completed') {
-      await scoreCompletedMatches();
+      let result;
+      do {
+        result = await scoreCompletedMatches();
+      } while (result.remaining > 0);
     }
     return updated;
   },

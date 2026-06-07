@@ -22,7 +22,7 @@ const updateBuilder = {
 };
 
 const insertBuilder = {
-  values: vi.fn(() => Promise.resolve(undefined)),
+  values: vi.fn().mockReturnThis(),
 };
 
 vi.mock('@/db', () => ({
@@ -66,7 +66,8 @@ describe('adminRepository.updateMatch', () => {
     updateBuilder.set.mockReturnThis();
     updateBuilder.where.mockReturnThis();
     updateBuilder.returning.mockImplementation(() => Promise.resolve(returningResult));
-    insertBuilder.values.mockResolvedValue(undefined);
+    insertBuilder.values.mockReturnThis();
+    vi.mocked(scoreCompletedMatches).mockResolvedValue({ tipsScored: 0, matchesProcessed: 0, remaining: 0 });
   });
 
   it('returns the updated match on a scheduled → live update', async () => {
@@ -151,6 +152,27 @@ describe('adminRepository.updateMatch', () => {
         newAwayScore: 1,
       }),
     );
+  });
+
+  it('throws when update returns empty (TOCTOU: match deleted between select and update)', async () => {
+    selectQueue.push([baseMatch]); // select succeeds
+    returningResult = []; // update returns nothing
+
+    await expect(
+      adminRepository.updateMatch('m1', { homeScore: 2, awayScore: 1, status: 'completed' }, 'user1'),
+    ).rejects.toThrow('Match not found');
+  });
+
+  it('loops scoreCompletedMatches until remaining reaches 0', async () => {
+    selectQueue.push([baseMatch]);
+    returningResult = [{ ...baseMatch, homeScore: 2, awayScore: 1, status: 'completed' }];
+    vi.mocked(scoreCompletedMatches)
+      .mockResolvedValueOnce({ tipsScored: 5, matchesProcessed: 10, remaining: 3 })
+      .mockResolvedValueOnce({ tipsScored: 2, matchesProcessed: 3, remaining: 0 });
+
+    await adminRepository.updateMatch('m1', { homeScore: 2, awayScore: 1, status: 'completed' }, 'user1');
+
+    expect(scoreCompletedMatches).toHaveBeenCalledTimes(2);
   });
 
   it('records null previous scores for a match not yet played', async () => {

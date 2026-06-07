@@ -208,21 +208,20 @@ describe('insightsRepository', () => {
       expect(result).toEqual(staleInsight);
     });
 
-    it('does not treat a fresh insight as stale when it is within the 24h window', async () => {
-      // generatedAt (10:00) > threshold (06:00) → fresh
-      selectQueue.push([INSIGHT_ROW]);
+    it('treats an insight generated exactly at the threshold boundary as fresh (isStale uses strict <)', async () => {
+      // generatedAt === THRESHOLD → not stale (boundary is exclusive)
+      const boundaryInsight = { ...INSIGHT_ROW, generatedAt: THRESHOLD };
+      selectQueue.push([boundaryInsight]);
       vi.mocked(matchesRepository.getById).mockResolvedValue(MATCH_ROW as any);
 
       const result = await insightsRepository.getOrGenerate('m1');
 
       expect(generateObject).not.toHaveBeenCalled();
-      expect(result).toEqual(INSIGHT_ROW);
+      expect(result).toEqual(boundaryInsight);
     });
   });
-});
 
-// Sanity check: verify fixture dates are consistent with the staleness logic
-// THRESHOLD = MATCH_DATE - 24h; fresh insight must be >= THRESHOLD
-if (INSIGHT_ROW.generatedAt < THRESHOLD) {
-  throw new Error('Test fixture error: INSIGHT_ROW.generatedAt is before threshold — tests would be misleading');
-}
+  it('fixture sanity: INSIGHT_ROW.generatedAt must be at or after the staleness threshold', () => {
+    expect(INSIGHT_ROW.generatedAt.getTime()).toBeGreaterThanOrEqual(THRESHOLD.getTime());
+  });
+});

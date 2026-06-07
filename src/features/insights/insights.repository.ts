@@ -70,12 +70,14 @@ export const insightsRepository = {
       generatedAt: new Date(),
     };
 
+    const { matchId: _, ...updateFields } = values;
+
     const [saved] = await db
       .insert(aiMatchInsights)
       .values(values)
       .onConflictDoUpdate({
         target: aiMatchInsights.matchId,
-        set: values,
+        set: updateFields,
       })
       .returning();
 
