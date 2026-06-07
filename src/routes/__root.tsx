@@ -1,4 +1,4 @@
-import { createRootRouteWithContext, HeadContent, Link, Outlet, Scripts, ScrollRestoration, useRouter } from '@tanstack/react-router';
+import { createRootRouteWithContext, HeadContent, Link, Outlet, Scripts, useRouter } from '@tanstack/react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { authClient } from '@/auth/authClient';
@@ -18,6 +18,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
     links: [{ rel: 'stylesheet', href: appCss }],
   }),
   errorComponent: RootError,
+  notFoundComponent: RootNotFound,
   component: RootComponent,
 });
 
@@ -36,6 +37,29 @@ function RootError({ error, reset }: { error: Error; reset: () => void }) {
           >
             Try again
           </button>
+        </div>
+        <Scripts />
+      </body>
+    </html>
+  );
+}
+
+function RootNotFound() {
+  return (
+    <html lang="en">
+      <head><HeadContent /></head>
+      <body className="min-h-screen bg-background font-sans antialiased flex items-center justify-center p-6">
+        <div className="w-full max-w-md space-y-3 text-center">
+          <h1 className="text-2xl font-bold">Page not found</h1>
+          <p className="text-sm text-muted-foreground">
+            The page you're looking for doesn't exist.
+          </p>
+          <Link
+            to="/"
+            className="text-sm font-medium underline underline-offset-2 hover:text-muted-foreground transition-colors"
+          >
+            Go home
+          </Link>
         </div>
         <Scripts />
       </body>
@@ -112,7 +136,6 @@ function RootDocument({ children }: { children: ReactNode }) {
       <body className="min-h-screen bg-background font-sans antialiased">
         <Navbar />
         {children}
-        <ScrollRestoration />
         <Scripts />
       </body>
     </html>
