@@ -7,16 +7,7 @@ Outstanding work is infrastructure and operational hardening, in priority order.
 
 ## High Priority
 
-### 2. Rate Limiting on AI Co-Pilot **→ Next**
-The AI co-pilot has no per-user cooldown. A user can trigger repeated LLM calls by refreshing the match detail page before the cache is populated.
-
-- Add a per-user+per-match cooldown (e.g. 60s) in `insightsRepository.getOrGenerate`
-- Return a `429`-style error or silently return `null` when the cooldown is active
-- Alternatively: pre-generate insights in a background job when matches are seeded
-
-*Key files:* `src/features/insights/insights.repository.ts`, `src/features/insights/insights.server.ts`
-
-### 3. Structured Logging
+### 3. Structured Logging **→ Next**
 Errors in server functions and repositories are currently swallowed silently or surface only as generic "Something went wrong" messages with no server-side trace.
 
 - Add `pino` with a request-ID middleware

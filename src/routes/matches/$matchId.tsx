@@ -113,7 +113,7 @@ function MatchDetail() {
       <div className="border rounded-xl p-6 space-y-4">
         <h2 className="font-semibold text-lg">AI Co-Pilot</h2>
         {insightError && (
-          <p className="text-sm text-destructive">Failed to generate analysis. Please try again.</p>
+          <p className="text-sm text-destructive">{(insightError as Error).message}</p>
         )}
         {insight ? (
           <div className="space-y-3">
@@ -134,7 +134,7 @@ function MatchDetail() {
             <p className="text-sm font-medium">Predicted: {insight.predictedWinner}</p>
             <p className="text-sm text-muted-foreground">{insight.tacticalAnalysis}</p>
           </div>
-        ) : (
+        ) : tipData?.isAuthenticated ? (
           <button
             onClick={() => consultCoPilot()}
             disabled={insightPending}
@@ -142,6 +142,11 @@ function MatchDetail() {
           >
             {insightPending ? 'Analysing…' : 'Consult Co-Pilot'}
           </button>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            <Link to="/login" className="underline underline-offset-2">Sign in</Link>
+            {' '}to use AI Co-Pilot.
+          </p>
         )}
       </div>
     </div>

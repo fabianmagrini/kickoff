@@ -10,6 +10,16 @@ GitHub Actions workflow running unit tests and production build on every PR and 
 - `.github/workflows/ci.yml`: `npm ci` → `npm run test` → `npm run build` on `ubuntu-latest` / Node 22
 - No secrets required — unit tests mock the DB; build uses the existing Neon fallback URL
 
+**Shipped:** 2026-06-08 · `7b5f1ea`
+
+---
+
+## Rate Limiting on AI Co-Pilot
+Per-user+per-match 60-second cooldown on the insight generation endpoint; auth now required to use AI Co-Pilot.
+
+- `insights.server.ts`: added auth check + in-process `cooldowns` Map keyed on `userId:matchId`; throws with a user-readable message when the cooldown is active
+- `matches/$matchId.tsx`: error message now shows the actual server message (covers both rate-limit and failure cases); "Consult Co-Pilot" button gated behind `isAuthenticated`; unauthenticated users see "Sign in to use AI Co-Pilot"
+
 **Shipped:** 2026-06-08 · (commit pending)
 
 ---

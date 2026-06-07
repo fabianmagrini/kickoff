@@ -343,7 +343,7 @@ All secrets live in `.env` (gitignored):
 | **Developer experience** | One-command dev, co-located tests, CLAUDE.md documents the why |
 | **Observability** | No structured logging, no error tracking, no metrics |
 | **CI/CD** | GitHub Actions: unit tests + build on every PR and push to main; E2E not yet on CI |
-| **Security** | Sessions correct, cron secret, admin guard; no rate limiting, no CSP headers |
+| **Security** | Sessions correct, cron secret, admin guard, AI co-pilot rate-limited (60s per user per match); no CSP headers |
 | **Scalability** | Neon HTTP is serverless-friendly; scoring is sequential O(n tips) |
 | **Operational maturity** | No health endpoint, no graceful shutdown, no alerting |
 
