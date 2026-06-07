@@ -7,17 +7,7 @@ Outstanding work is infrastructure and operational hardening, in priority order.
 
 ## High Priority
 
-### 1. CI/CD Pipeline **→ Next**
-No automated test or build runs on PRs or pushes. Regressions can ship undetected.
-
-- Add `.github/workflows/ci.yml`
-- On every PR: `npm run test` (Vitest unit tests) + `npm run build`
-- On merge to `main`: additionally run `npm run test:e2e` against a preview deployment
-- Set `CRON_SECRET`, `DATABASE_URL`, and AI provider keys as GitHub Actions secrets
-
-*Key files:* `.github/workflows/` (new), `playwright.config.ts`, `package.json`
-
-### 2. Rate Limiting on AI Co-Pilot
+### 2. Rate Limiting on AI Co-Pilot **→ Next**
 The AI co-pilot has no per-user cooldown. A user can trigger repeated LLM calls by refreshing the match detail page before the cache is populated.
 
 - Add a per-user+per-match cooldown (e.g. 60s) in `insightsRepository.getOrGenerate`

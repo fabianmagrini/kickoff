@@ -329,7 +329,7 @@ All secrets live in `.env` (gitignored):
 
 ### CI/CD
 
-No pipeline is configured. The project is structured to support CI easily — all test commands are `npm run test` / `npm run test:e2e` — but automation has not been wired up yet.
+`.github/workflows/ci.yml` runs `npm run test` (Vitest unit tests) and `npm run build` on every PR and push to `main`. No secrets required — unit tests mock the DB and the build uses an existing Neon fallback URL. E2E tests are excluded until a preview deployment is available.
 
 ---
 
@@ -342,7 +342,7 @@ No pipeline is configured. The project is structured to support CI easily — al
 | **Test coverage** | 71 unit tests across all repositories; E2E suite covers all routes including competition-scoped fixtures, leaderboard, leagues, admin, profile, cron |
 | **Developer experience** | One-command dev, co-located tests, CLAUDE.md documents the why |
 | **Observability** | No structured logging, no error tracking, no metrics |
-| **CI/CD** | No pipeline; tests run locally only |
+| **CI/CD** | GitHub Actions: unit tests + build on every PR and push to main; E2E not yet on CI |
 | **Security** | Sessions correct, cron secret, admin guard; no rate limiting, no CSP headers |
 | **Scalability** | Neon HTTP is serverless-friendly; scoring is sequential O(n tips) |
 | **Operational maturity** | No health endpoint, no graceful shutdown, no alerting |

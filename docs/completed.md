@@ -4,6 +4,16 @@ Items removed from the active backlog, in reverse chronological order.
 
 ---
 
+## CI/CD Pipeline
+GitHub Actions workflow running unit tests and production build on every PR and push to main. E2E omitted until a preview deployment is available.
+
+- `.github/workflows/ci.yml`: `npm ci` → `npm run test` → `npm run build` on `ubuntu-latest` / Node 22
+- No secrets required — unit tests mock the DB; build uses the existing Neon fallback URL
+
+**Shipped:** 2026-06-08 · (commit pending)
+
+---
+
 ## Multi-Competition Support
 Competitions become a first-class concept — the World Cup is one competition among many.
 
