@@ -11,7 +11,7 @@ Pino-based structured logging across all server functions; errors and slow calls
 - All 9 `*.server.ts` files updated to wrap handlers in `logServerFn`
 - `LOG_LEVEL` env var controls verbosity (default: `info`)
 
-**Shipped:** 2026-06-08 · (commit pending)
+**Shipped:** 2026-06-08 · `5d3bc47`
 
 ---
 
