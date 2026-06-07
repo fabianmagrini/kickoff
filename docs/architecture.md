@@ -10,7 +10,7 @@ Kickoff is a **production-grade sports tipping application** that supports multi
 
 The architecture is a **modular monolith with SSR** built on TanStack Start. There is no separate API server — the same Node.js process serves HTML, handles server functions (RPC), and talks to the database. The team deliberately chose a tight vertical stack: Neon serverless Postgres, Drizzle ORM, Better Auth, TanStack Router + Query, Vercel AI SDK, all wired together in one repo with one build artifact.
 
-Engineering maturity is high for a solo/small-team project: consistent layering, good test coverage, typed end-to-end, ADRs for decisions. CI/CD is not yet configured (see backlog).
+Engineering maturity is high for a solo/small-team project: consistent layering, good test coverage, typed end-to-end, ADRs for decisions, GitHub Actions CI on every PR.
 
 ---
 
@@ -35,6 +35,7 @@ Engineering maturity is high for a solo/small-team project: consistent layering,
 │  competitions  •  matches  •  user_competition_points           │
 │  user/session/account/verification (Better Auth)               │
 │  tips  •  leagues  •  league_members  •  ai_match_insights      │
+│  admin_audit_log                                                │
 └─────────────────────────────────────────────────────────────────┘
          ↑ also queried by  scheduled POST /api/cron/score
          ↑ also written by  AI SDK (insight cache)
@@ -260,33 +261,42 @@ Auth checks live exclusively in the server fn layer. Repositories are pure data 
 ### Scoring Pipeline
 
 ```
-calculatePoints()         → pure function, no I/O
-tipsRepository.submit()   → INSERT only
-scoreCompletedMatches()   → fetch completed matches
-                             → for each: find unscored tips (scoredAt IS NULL)
-                             → calculatePoints() → UPDATE tip
-                             → recalculate user.points (global total across all competitions)
-                             → upsert user_competition_points (per-competition total)
-adminRepository.updateMatch() → UPDATE match + call scoreCompletedMatches()
-POST /api/cron/score      → validate x-cron-secret header → scoreCompletedMatches()
+calculatePoints()               → pure function, no I/O
+tipsRepository.submit()         → INSERT only
+scoreCompletedMatches(chunkSize=10)
+                                → fetch completed matches
+                                → for each (up to chunkSize with unscored tips):
+                                    calculatePoints() → UPDATE tip (scoredAt)
+                                    recalculate user.points (global SUM across all tips)
+                                    upsert user_competition_points (per-competition SUM)
+                                → returns { tipsScored, matchesProcessed, remaining }
+adminRepository.updateMatch()   → SELECT current state → INSERT audit log row
+                                → UPDATE match score/status
+                                → loop scoreCompletedMatches() until remaining === 0
+POST /api/cron/score            → validate x-cron-secret header
+                                → loop scoreCompletedMatches() until remaining === 0
 ```
 
-`scoreCompletedMatches()` is **idempotent** — tips with `scoredAt IS NOT NULL` are skipped. Safe to call multiple times.
+`scoreCompletedMatches()` is **idempotent** — tips with `scoredAt IS NOT NULL` are skipped. The `chunkSize` limit keeps each DB round-trip within Neon's HTTP timeout; callers loop until `remaining === 0` to exhaust the full backlog.
 
 ### AI Integration
 
 ```
 insightsRepository.getOrGenerate(matchId):
-  1. SELECT FROM ai_match_insights WHERE match_id = $1
-  2. if found → return cached  (0 LLM calls)
-  3. else:
-       matchesRepository.getById(matchId)         ← get team names
-       generateObject({ model, schema, prompt })  ← Vercel AI SDK
-       INSERT INTO ai_match_insights (...)         ← persist
+  1. Promise.all([
+       SELECT FROM ai_match_insights WHERE match_id = $1,   ← cache lookup
+       matchesRepository.getById(matchId)                   ← match fetch
+     ])                                                      (parallel, always)
+  2. if match not found → throw 'Match not found'
+  3. if cached AND NOT stale AND match is completed → return cached (0 LLM calls)
+     staleness: generatedAt < matchDate − 24h  (refreshed within 24h of kickoff)
+  4. else (cache miss OR stale scheduled match):
+       generateObject({ model, schema, prompt })             ← Vercel AI SDK
+       INSERT ... ON CONFLICT (match_id) DO UPDATE SET ...   ← upsert (safe on re-generate)
        return saved
 ```
 
-`generateObject` enforces a Zod schema on the LLM response — if the model returns malformed JSON or violates the schema, Vercel AI SDK retries automatically. The `AI_PROVIDER` env var selects Google Gemini (default) or OpenAI; `AI_MODEL` overrides the model ID.
+`generateObject` enforces a Zod schema on the LLM response — if the model returns malformed JSON or violates the schema, Vercel AI SDK retries automatically. The `AI_PROVIDER` env var selects Google Gemini (default) or OpenAI; `AI_MODEL` overrides the model ID. The match fetch and cache lookup run in parallel on every call; this makes the staleness check available without a second round-trip when the cached row is stale.
 
 ---
 
@@ -339,13 +349,13 @@ All secrets live in `.env` (gitignored):
 |---|---|
 | **Architectural consistency** | Deep module pattern applied uniformly across all 10 feature slices |
 | **Type safety** | End-to-end: DB schema → server fn → client; no visible `any` |
-| **Test coverage** | 71 unit tests across all repositories; E2E suite covers all routes including competition-scoped fixtures, leaderboard, leagues, admin, profile, cron |
+| **Test coverage** | 82 unit tests across all repositories; E2E suite covers all routes including competition-scoped fixtures, leaderboard, leagues, admin, profile, cron |
 | **Developer experience** | One-command dev, co-located tests, CLAUDE.md documents the why |
 | **Observability** | Pino structured logging on all server functions (error + slow-call detection); no error tracking service, no metrics |
 | **CI/CD** | GitHub Actions: unit tests + build on every PR and push to main; E2E not yet on CI |
 | **Security** | Sessions correct, cron secret, admin guard, AI co-pilot rate-limited (60s per user per match); no CSP headers |
-| **Scalability** | Neon HTTP is serverless-friendly; scoring is sequential O(n tips) |
-| **Operational maturity** | No health endpoint, no graceful shutdown, no alerting |
+| **Scalability** | Neon HTTP is serverless-friendly; scoring chunked (10 matches/call) with loop-until-done |
+| **Operational maturity** | `GET /api/healthz` readiness endpoint; no graceful shutdown, no alerting |
 
 **Strengths:**
 - Layering is rigorous and never violated (no DB imports in routes, no business logic in routes)
@@ -354,11 +364,9 @@ All secrets live in `.env` (gitignored):
 - ADRs document *why* decisions were made, not just what
 
 **Risks:**
-- `scoreCompletedMatches()` is synchronous and sequential — slow at scale
-- No CI means regressions could ship undetected
-- `ai_match_insights` cache has no invalidation strategy — stale insights persist forever
-- No rate limiting on the AI endpoint
 - `ADMIN_USER_IDS` as a comma-separated env var is fragile at scale
+- AI co-pilot rate limit is in-process memory — resets on restart and does not enforce across replicas
+- No graceful shutdown — in-flight requests can be interrupted on deploy
 
 ---
 
@@ -407,6 +415,16 @@ Phase 8 — Multi-Competition
   All repositories scoped to competitionId
   /competitions/$id/* route tree; home page → competition selector
   One-time migration script for existing WC 2026 data
+
+Phase 9 — Infrastructure Hardening
+  GitHub Actions CI (unit tests + build on every PR)
+  Pino structured logging on all server functions (reqId, slow-call detection)
+  AI Co-Pilot rate limit: auth required + 60s per-user per-match cooldown
+  scoreCompletedMatches() chunked (chunkSize=10, remaining counter, cron loop)
+  Insight TTL: staleness check (generatedAt < matchDate−24h), upsert on regenerate
+  GET /api/healthz readiness endpoint
+  admin_audit_log table: every score change records who/what/when
+  Code review: 8 correctness fixes (TOCTOU guard, scoring loop, upsert PK fix, chunk guard)
 ```
 
 ---
@@ -430,22 +448,11 @@ Renaming `auth.client.ts` to `authClient.ts` fixed the production build. The `.c
 
 ---
 
-## 12. Suggested Improvements
+## 12. Shipped Improvements
 
-**High priority**
-- Add GitHub Actions CI — `npm run test` + `npm run build` on every PR; E2E on `main` merges
-- Rate-limit the AI co-pilot endpoint — a per-user cooldown prevents accidental LLM cost overruns
-- Add structured logging (`pino`) with request IDs — currently errors are swallowed silently
+All items from the original backlog have shipped as of 2026-06-08. See [docs/completed.md](./completed.md) for the full history with commit SHAs.
 
-**Medium priority**
-- Paginate `scoreCompletedMatches()` — process in chunks; the current sequential loop blocks the event loop for large tournaments
-- Add insight TTL — regenerate insights older than 24h pre-kickoff
-- Add a health endpoint — `GET /healthz → { ok: true }` for deployment checks
-
-**Low priority**
-- Admin audit log — record who changed which score and when
-
-See [docs/backlog.md](../docs/backlog.md) for implementation detail on each item.
+The remaining open risks are listed in §9: in-process rate-limit state (no cross-replica enforcement) and lack of graceful shutdown handling.
 
 ---
 

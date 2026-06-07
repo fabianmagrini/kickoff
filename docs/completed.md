@@ -4,6 +4,21 @@ Items removed from the active backlog, in reverse chronological order.
 
 ---
 
+## Code Review: 8 Correctness Fixes
+A high-effort code review surfaced and fixed 8 bugs across the infrastructure hardening commits.
+
+- `admin.repository.ts`: added TOCTOU guard (`if (!updated) throw`) after `db.update().returning()` — protects against match deleted between select and update
+- `admin.repository.ts`: `updateMatch` now loops `scoreCompletedMatches()` until `remaining === 0`, matching the cron handler — previously a single admin save could leave matches unscored
+- `insights.repository.ts`: excluded `matchId` (PK) from `onConflictDoUpdate` `set` — passing the conflict target in `SET` is semantically wrong
+- `scoring.service.ts`: moved chunk guard before the `unscoredTips` query — avoids a DB round-trip for every over-chunk match per cron invocation
+- `admin.repository.test.ts`: added TOCTOU crash test and `remaining > 0` loop test; made `insertBuilder.values` chainable
+- `scoring.service.test.ts`: removed now-obsolete m3 tips queue entry (chunk guard fires before the tips query)
+- `insights.repository.test.ts`: replaced duplicate fresh-cache test with a threshold-boundary test; converted module-level `throw` to a named `it()` test
+
+**Shipped:** 2026-06-08 · `e409bf0`
+
+---
+
 ## Admin Audit Log
 Score changes made via the admin panel are now recorded in `admin_audit_log`. The "Recent Changes" section on the admin page shows who changed what and when, and updates live after each save.
 
@@ -76,7 +91,7 @@ Per-user+per-match 60-second cooldown on the insight generation endpoint; auth n
 - `insights.server.ts`: added auth check + in-process `cooldowns` Map keyed on `userId:matchId`; throws with a user-readable message when the cooldown is active
 - `matches/$matchId.tsx`: error message now shows the actual server message (covers both rate-limit and failure cases); "Consult Co-Pilot" button gated behind `isAuthenticated`; unauthenticated users see "Sign in to use AI Co-Pilot"
 
-**Shipped:** 2026-06-08 · (commit pending)
+**Shipped:** 2026-06-08 · `5e55c1e`
 
 ---
 

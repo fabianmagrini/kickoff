@@ -123,6 +123,8 @@ src/
   auth/
     auth.ts                          # Better Auth config
     authClient.ts                    # createAuthClient() for React hooks (isomorphic — no .client. naming)
+  lib/
+    logger.ts                        # Pino singleton + logServerFn wrapper (reqId, slow-call >500ms, log levels)
   db/
     index.ts                         # Drizzle client (neon-http driver)
     schema.ts                        # All table definitions
