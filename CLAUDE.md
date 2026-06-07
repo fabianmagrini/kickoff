@@ -234,12 +234,24 @@ Document the *why*, not the *what*:
 - **Server function modules** — add a one-line JSDoc on exported server functions that have auth requirements or non-obvious side effects.
 
 ### Feature completion checklist
-Before marking any feature or backlog item as done, apply these four steps in the same commit as the implementation:
+Before marking any feature or backlog item as done, apply these steps in the same commit as the implementation:
 
+**Always:**
 1. **`docs/backlog.md`** — remove the item (or replace it with any follow-on work it uncovered) and move it to `docs/completed.md` with the ship date and commit SHA.
 2. **CLAUDE.md Project Structure** — add every new file to the tree with a one-line comment.
-3. **`docs/architecture.md §9`** — if the quality assessment mentions a gap that is now closed, update that row.
-4. **ADR** — if the decision meets the criteria in `docs/adr/README.md`, write one before closing the item.
+3. **ADR** — if the decision meets the criteria in `docs/adr/README.md`, write one before closing the item.
+
+**By change type** — update the listed sections of `docs/architecture.md` in the same commit:
+
+| What changed | Sections to update |
+|---|---|
+| New schema table | §2 DB diagram · §9 quality assessment |
+| New feature slice | §13 component interaction map · §9 (feature slice count) |
+| New or retired routes | No update needed — §6 references CLAUDE.md |
+| Scoring or data pipeline change | §7 backend architecture |
+| Quality gap closed | §9 quality assessment |
+| Significant new build phase | §10 historical evolution |
+| New architectural decision | §11 key lessons (if a lesson generalises) |
 
 ### Architecture Decision Records
 Write an ADR in `docs/adr/` whenever a decision meets any of these criteria:
