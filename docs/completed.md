@@ -14,7 +14,7 @@ Score changes made via the admin panel are now recorded in `admin_audit_log`. Th
 - `src/features/admin/admin.queries.ts`: `auditLogQueryOptions`
 - `src/routes/admin.tsx`: loads audit log in parallel with competitions; `AuditLogTable` component; invalidates `['admin', 'audit-log']` after each update
 
-**Shipped:** 2026-06-08 · TBD
+**Shipped:** 2026-06-08 · `9c66244`
 
 ---
 
