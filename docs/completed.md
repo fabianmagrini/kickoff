@@ -10,7 +10,7 @@ Items removed from the active backlog, in reverse chronological order.
 - `src/routes/api/healthz.ts`: new route using the same `server.handlers` pattern as the cron endpoint
 - `e2e/healthz.spec.ts`: smoke test verifying status 200 and response body
 
-**Shipped:** 2026-06-08 · TBD
+**Shipped:** 2026-06-08 · `e93ae57`
 
 ---
 
