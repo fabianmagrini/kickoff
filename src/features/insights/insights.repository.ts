@@ -17,6 +17,12 @@ const insightSchema = z.object({
   tacticalAnalysis: z.string(),
 });
 
+// An insight generated before the 24h-before-kickoff window may miss late team news.
+function isStale(insight: AiInsight, matchDate: Date): boolean {
+  const threshold = new Date(matchDate.getTime() - 24 * 60 * 60 * 1000);
+  return insight.generatedAt < threshold;
+}
+
 export const insightsRepository = {
   getCached: async (matchId: string): Promise<AiInsight | null> => {
     const [existing] = await db
@@ -27,11 +33,18 @@ export const insightsRepository = {
   },
 
   getOrGenerate: async (matchId: string): Promise<AiInsight> => {
-    const cached = await insightsRepository.getCached(matchId);
-    if (cached) return cached;
+    const [cached, match] = await Promise.all([
+      insightsRepository.getCached(matchId),
+      matchesRepository.getById(matchId),
+    ]);
 
-    const match = await matchesRepository.getById(matchId);
     if (!match) throw new Error('Match not found');
+
+    const stale = cached !== null
+      && match.status !== 'completed'
+      && isStale(cached, match.matchDate);
+
+    if (cached && !stale) return cached;
 
     const competition = match.competitionId
       ? await competitionsRepository.getById(match.competitionId)
@@ -47,14 +60,24 @@ export const insightsRepository = {
                predicted winner (or "Draw"), and a concise 3-sentence tactical analysis.`,
     });
 
-    const [saved] = await db.insert(aiMatchInsights).values({
+    const values = {
       matchId,
       predictedWinner: aiResponse.predictedWinner,
       winProbabilityHome: aiResponse.winProbabilityHome,
       winProbabilityAway: aiResponse.winProbabilityAway,
       winProbabilityDraw: aiResponse.winProbabilityDraw,
       tacticalAnalysis: aiResponse.tacticalAnalysis,
-    }).returning();
+      generatedAt: new Date(),
+    };
+
+    const [saved] = await db
+      .insert(aiMatchInsights)
+      .values(values)
+      .onConflictDoUpdate({
+        target: aiMatchInsights.matchId,
+        set: values,
+      })
+      .returning();
 
     return saved;
   },

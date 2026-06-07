@@ -4,6 +4,16 @@ Items removed from the active backlog, in reverse chronological order.
 
 ---
 
+## Insight TTL / Cache Invalidation
+Stale `ai_match_insights` rows (generated before the 24h-before-kickoff window) are now automatically refreshed on the next `getOrGenerate` call. Completed matches are never re-queried.
+
+- `src/features/insights/insights.repository.ts`: added `isStale(insight, matchDate)` helper; `getOrGenerate` now fetches the match in parallel with the cache lookup and upserts on a stale hit
+- `src/features/insights/insights.repository.test.ts`: added `generatedAt` to fixture; added `onConflictDoUpdate` to insert builder; added staleness, stale-overwrite, completed-match-guard, and threshold-boundary tests
+
+**Shipped:** 2026-06-08 · TBD
+
+---
+
 ## Paginate `scoreCompletedMatches()`
 `scoreCompletedMatches(chunkSize = 10)` now processes completed matches in chunks, returning `{ tipsScored, matchesProcessed, remaining }`. The cron handler loops until `remaining === 0`, keeping each DB round-trip under Neon's HTTP timeout.
 
