@@ -4,6 +4,17 @@ Items removed from the active backlog, in reverse chronological order.
 
 ---
 
+## Structured Logging
+Pino-based structured logging across all server functions; errors and slow calls surface in production logs with a per-request ID for correlation.
+
+- `src/lib/logger.ts`: pino singleton + `logServerFn` wrapper (generates `reqId` via `crypto.randomUUID()`; logs auth rejections at `warn`, other errors at `error` with stack; logs slow calls >500ms at `warn`)
+- All 9 `*.server.ts` files updated to wrap handlers in `logServerFn`
+- `LOG_LEVEL` env var controls verbosity (default: `info`)
+
+**Shipped:** 2026-06-08 · (commit pending)
+
+---
+
 ## CI/CD Pipeline
 GitHub Actions workflow running unit tests and production build on every PR and push to main. E2E omitted until a preview deployment is available.
 

@@ -341,7 +341,7 @@ All secrets live in `.env` (gitignored):
 | **Type safety** | End-to-end: DB schema → server fn → client; no visible `any` |
 | **Test coverage** | 71 unit tests across all repositories; E2E suite covers all routes including competition-scoped fixtures, leaderboard, leagues, admin, profile, cron |
 | **Developer experience** | One-command dev, co-located tests, CLAUDE.md documents the why |
-| **Observability** | No structured logging, no error tracking, no metrics |
+| **Observability** | Pino structured logging on all server functions (error + slow-call detection); no error tracking service, no metrics |
 | **CI/CD** | GitHub Actions: unit tests + build on every PR and push to main; E2E not yet on CI |
 | **Security** | Sessions correct, cron secret, admin guard, AI co-pilot rate-limited (60s per user per match); no CSP headers |
 | **Scalability** | Neon HTTP is serverless-friendly; scoring is sequential O(n tips) |

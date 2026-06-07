@@ -3,6 +3,7 @@ import { getRequest } from '@tanstack/react-start/server';
 import { z } from 'zod';
 import { auth } from '@/auth/auth';
 import { adminRepository } from './admin.repository';
+import { logServerFn } from '@/lib/logger';
 
 function isAdmin(userId: string): boolean {
   const ids = process.env.ADMIN_USER_IDS ?? '';
@@ -18,7 +19,7 @@ async function requireAdmin() {
 
 /** Throws if the caller is not an authenticated admin. */
 export const checkIsAdminFn = createServerFn({ method: 'GET' })
-  .handler(() => requireAdmin());
+  .handler(() => logServerFn('checkIsAdminFn', () => requireAdmin()));
 
 const updateMatchSchema = z.object({
   matchId: z.string().uuid(),
@@ -30,8 +31,10 @@ const updateMatchSchema = z.object({
 /** Update a match result and trigger re-scoring if completed. Requires admin. */
 export const updateMatchFn = createServerFn({ method: 'POST' })
   .inputValidator((data: unknown) => updateMatchSchema.parse(data))
-  .handler(async ({ data }) => {
-    await requireAdmin();
-    const { matchId, ...update } = data;
-    return adminRepository.updateMatch(matchId, update);
-  });
+  .handler(({ data }) =>
+    logServerFn('updateMatchFn', async () => {
+      await requireAdmin();
+      const { matchId, ...update } = data;
+      return adminRepository.updateMatch(matchId, update);
+    }),
+  );

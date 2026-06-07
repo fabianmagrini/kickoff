@@ -7,20 +7,11 @@ Outstanding work is infrastructure and operational hardening, in priority order.
 
 ## High Priority
 
-### 3. Structured Logging **→ Next**
-Errors in server functions and repositories are currently swallowed silently or surface only as generic "Something went wrong" messages with no server-side trace.
-
-- Add `pino` with a request-ID middleware
-- Log errors at `error` level with stack traces in production
-- Log slow DB queries at `warn` level (threshold: >500ms)
-
-*Key files:* `src/entry-server.tsx`, all `*.server.ts` files, `package.json`
-
 ---
 
 ## Medium Priority
 
-### 4. Paginate `scoreCompletedMatches()`
+### 4. Paginate `scoreCompletedMatches()` **→ Next**
 The scoring loop processes all completed matches sequentially in a single call. At tournament scale this risks hitting Neon's HTTP request timeout.
 
 - Process matches in chunks of N (e.g. 10) per invocation

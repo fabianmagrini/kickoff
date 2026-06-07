@@ -3,6 +3,7 @@ import { getRequest } from '@tanstack/react-start/server';
 import { z } from 'zod';
 import { auth } from '@/auth/auth';
 import { leaguesRepository } from './leagues.repository';
+import { logServerFn } from '@/lib/logger';
 
 async function requireAuth() {
   const session = await auth.api.getSession({ headers: getRequest().headers });
@@ -13,47 +14,57 @@ async function requireAuth() {
 /** Returns all leagues the authenticated user belongs to in a competition. Requires auth. */
 export const getMyLeaguesFn = createServerFn({ method: 'GET' })
   .inputValidator((competitionId: string) => competitionId)
-  .handler(async ({ data: competitionId }) => {
-    const user = await requireAuth();
-    return leaguesRepository.getMyLeagues(user.id, competitionId);
-  });
+  .handler(({ data: competitionId }) =>
+    logServerFn('getMyLeaguesFn', async () => {
+      const user = await requireAuth();
+      return leaguesRepository.getMyLeagues(user.id, competitionId);
+    }),
+  );
 
 /** Returns league detail for a member. Throws if user is not a member. Requires auth. */
 export const getLeagueFn = createServerFn({ method: 'GET' })
   .inputValidator((leagueId: string) => leagueId)
-  .handler(async ({ data: leagueId }) => {
-    const user = await requireAuth();
-    const league = await leaguesRepository.getById(leagueId, user.id);
-    if (!league) throw new Error('League not found');
-    return league;
-  });
+  .handler(({ data: leagueId }) =>
+    logServerFn('getLeagueFn', async () => {
+      const user = await requireAuth();
+      const league = await leaguesRepository.getById(leagueId, user.id);
+      if (!league) throw new Error('League not found');
+      return league;
+    }),
+  );
 
 /** Returns the scoped leaderboard for a league. Throws if user is not a member. Requires auth. */
 export const getLeagueLeaderboardFn = createServerFn({ method: 'GET' })
   .inputValidator((leagueId: string) => leagueId)
-  .handler(async ({ data: leagueId }) => {
-    const user = await requireAuth();
-    const league = await leaguesRepository.getById(leagueId, user.id);
-    if (!league) throw new Error('League not found');
-    return leaguesRepository.getLeaderboard(leagueId);
-  });
+  .handler(({ data: leagueId }) =>
+    logServerFn('getLeagueLeaderboardFn', async () => {
+      const user = await requireAuth();
+      const league = await leaguesRepository.getById(leagueId, user.id);
+      if (!league) throw new Error('League not found');
+      return leaguesRepository.getLeaderboard(leagueId);
+    }),
+  );
 
 /** Creates a new league in a competition and adds the creator as the first member. Requires auth. */
 export const createLeagueFn = createServerFn({ method: 'POST' })
   .inputValidator((data: unknown) =>
     z.object({ name: z.string().min(1).max(50), competitionId: z.string().uuid() }).parse(data),
   )
-  .handler(async ({ data }) => {
-    const user = await requireAuth();
-    return leaguesRepository.create(data.name, user.id, data.competitionId);
-  });
+  .handler(({ data }) =>
+    logServerFn('createLeagueFn', async () => {
+      const user = await requireAuth();
+      return leaguesRepository.create(data.name, user.id, data.competitionId);
+    }),
+  );
 
 /** Joins a league by invite code. Throws if code is invalid or user is already a member. Requires auth. */
 export const joinLeagueFn = createServerFn({ method: 'POST' })
   .inputValidator((data: unknown) =>
     z.object({ inviteCode: z.string().min(1) }).parse(data),
   )
-  .handler(async ({ data }) => {
-    const user = await requireAuth();
-    return leaguesRepository.joinByCode(data.inviteCode, user.id);
-  });
+  .handler(({ data }) =>
+    logServerFn('joinLeagueFn', async () => {
+      const user = await requireAuth();
+      return leaguesRepository.joinByCode(data.inviteCode, user.id);
+    }),
+  );
