@@ -4,6 +4,17 @@ Items removed from the active backlog, in reverse chronological order.
 
 ---
 
+## Paginate `scoreCompletedMatches()`
+`scoreCompletedMatches(chunkSize = 10)` now processes completed matches in chunks, returning `{ tipsScored, matchesProcessed, remaining }`. The cron handler loops until `remaining === 0`, keeping each DB round-trip under Neon's HTTP timeout.
+
+- `src/features/scoring/scoring.service.ts`: added `chunkSize` param, `remaining` counter, chunk-limit guard
+- `src/features/scoring/scoring.service.test.ts`: updated all assertions to include `remaining`; added chunking coverage test
+- `src/routes/api/cron/score.ts`: loops `scoreCompletedMatches` until `remaining === 0`, returns accumulated totals
+
+**Shipped:** 2026-06-08 · TBD
+
+---
+
 ## Structured Logging
 Pino-based structured logging across all server functions; errors and slow calls surface in production logs with a per-request ID for correlation.
 

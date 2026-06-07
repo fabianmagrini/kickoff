@@ -6,15 +6,17 @@ import { calculatePoints } from '@/features/tips/scoring';
 export type ScoringResult = {
   tipsScored: number;
   matchesProcessed: number;
+  /** Completed matches with unscored tips that were not reached this run. Re-invoke to continue. */
+  remaining: number;
 };
 
 /**
- * Score all unscored tips for completed matches and update user point totals.
+ * Score unscored tips for completed matches, up to chunkSize matches per call.
  * Safe to run multiple times — tips with scoredAt set are skipped.
+ * When remaining > 0, invoke again immediately to process the next chunk.
  * Updates both users.points (global total) and userCompetitionPoints (per-competition).
- * Processes each match sequentially; partial runs are recoverable on the next call.
  */
-export async function scoreCompletedMatches(): Promise<ScoringResult> {
+export async function scoreCompletedMatches(chunkSize = 10): Promise<ScoringResult> {
   const completedMatches = await db
     .select()
     .from(matches)
@@ -22,6 +24,7 @@ export async function scoreCompletedMatches(): Promise<ScoringResult> {
 
   let tipsScored = 0;
   let matchesProcessed = 0;
+  let remaining = 0;
 
   for (const match of completedMatches) {
     if (match.homeScore === null || match.awayScore === null) continue;
@@ -35,6 +38,12 @@ export async function scoreCompletedMatches(): Promise<ScoringResult> {
       ));
 
     if (unscoredTips.length === 0) continue;
+
+    // Chunk limit reached — count remaining matches but don't process them
+    if (matchesProcessed >= chunkSize) {
+      remaining++;
+      continue;
+    }
 
     const now = new Date();
     const affectedUserIds = new Set<string>();
@@ -59,7 +68,6 @@ export async function scoreCompletedMatches(): Promise<ScoringResult> {
     matchesProcessed++;
 
     for (const userId of affectedUserIds) {
-      // Recalculate global total from all scored tips
       const [globalResult] = await db
         .select({ total: sum(tips.pointsEarned) })
         .from(tips)
@@ -72,7 +80,6 @@ export async function scoreCompletedMatches(): Promise<ScoringResult> {
         .set({ points: globalPoints })
         .where(eq(users.id, userId));
 
-      // Recalculate competition-scoped total
       if (match.competitionId) {
         const [compResult] = await db
           .select({ total: sum(tips.pointsEarned) })
@@ -99,5 +106,5 @@ export async function scoreCompletedMatches(): Promise<ScoringResult> {
     }
   }
 
-  return { tipsScored, matchesProcessed };
+  return { tipsScored, matchesProcessed, remaining };
 }

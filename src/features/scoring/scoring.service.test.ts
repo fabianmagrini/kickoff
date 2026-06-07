@@ -51,20 +51,20 @@ describe('scoreCompletedMatches', () => {
   it('returns zero counts when no completed matches exist', async () => {
     selectQueue.push([]); // completed matches query → empty
     const result = await scoreCompletedMatches();
-    expect(result).toEqual({ tipsScored: 0, matchesProcessed: 0 });
+    expect(result).toEqual({ tipsScored: 0, matchesProcessed: 0, remaining: 0 });
   });
 
   it('skips completed matches with null scores (data entry lag)', async () => {
     selectQueue.push([{ id: 'm1', status: 'completed', homeScore: null, awayScore: null }]);
     const result = await scoreCompletedMatches();
-    expect(result).toEqual({ tipsScored: 0, matchesProcessed: 0 });
+    expect(result).toEqual({ tipsScored: 0, matchesProcessed: 0, remaining: 0 });
   });
 
   it('skips matches where all tips are already scored', async () => {
     selectQueue.push([{ id: 'm1', status: 'completed', homeScore: 2, awayScore: 1 }]);
     selectQueue.push([]); // unscored tips query → empty
     const result = await scoreCompletedMatches();
-    expect(result).toEqual({ tipsScored: 0, matchesProcessed: 0 });
+    expect(result).toEqual({ tipsScored: 0, matchesProcessed: 0, remaining: 0 });
   });
 
   it('scores an exact prediction with 3 points and updates user total', async () => {
@@ -76,7 +76,7 @@ describe('scoreCompletedMatches', () => {
 
     const result = await scoreCompletedMatches();
 
-    expect(result).toEqual({ tipsScored: 1, matchesProcessed: 1 });
+    expect(result).toEqual({ tipsScored: 1, matchesProcessed: 1, remaining: 0 });
     expect(eq).toHaveBeenCalledWith(expect.anything(), 't1'); // update targets tip t1
     expect(updateBuilder.set).toHaveBeenNthCalledWith(
       1,
@@ -94,7 +94,7 @@ describe('scoreCompletedMatches', () => {
 
     const result = await scoreCompletedMatches();
 
-    expect(result).toEqual({ tipsScored: 1, matchesProcessed: 1 });
+    expect(result).toEqual({ tipsScored: 1, matchesProcessed: 1, remaining: 0 });
     expect(eq).toHaveBeenCalledWith(expect.anything(), 't1'); // update targets tip t1
     expect(updateBuilder.set).toHaveBeenNthCalledWith(
       1,
@@ -112,7 +112,7 @@ describe('scoreCompletedMatches', () => {
 
     const result = await scoreCompletedMatches();
 
-    expect(result).toEqual({ tipsScored: 1, matchesProcessed: 1 });
+    expect(result).toEqual({ tipsScored: 1, matchesProcessed: 1, remaining: 0 });
     expect(eq).toHaveBeenCalledWith(expect.anything(), 't1'); // update targets tip t1
     expect(updateBuilder.set).toHaveBeenNthCalledWith(
       1,
@@ -130,7 +130,7 @@ describe('scoreCompletedMatches', () => {
 
     const result = await scoreCompletedMatches();
 
-    expect(result).toEqual({ tipsScored: 1, matchesProcessed: 1 });
+    expect(result).toEqual({ tipsScored: 1, matchesProcessed: 1, remaining: 0 });
     expect(updateBuilder.set).toHaveBeenNthCalledWith(2, { points: 0 });
   });
 
@@ -144,7 +144,7 @@ describe('scoreCompletedMatches', () => {
 
     const result = await scoreCompletedMatches();
 
-    expect(result).toEqual({ tipsScored: 1, matchesProcessed: 1 });
+    expect(result).toEqual({ tipsScored: 1, matchesProcessed: 1, remaining: 0 });
     // insert upsert fired once for the one affected user
     expect(insertBuilder.values).toHaveBeenCalledOnce();
     expect(insertBuilder.values).toHaveBeenCalledWith(
@@ -178,11 +178,32 @@ describe('scoreCompletedMatches', () => {
 
     const result = await scoreCompletedMatches();
 
-    expect(result).toEqual({ tipsScored: 2, matchesProcessed: 1 });
+    expect(result).toEqual({ tipsScored: 2, matchesProcessed: 1, remaining: 0 });
     // 2 tip updates + 2 user-total updates = 4 set() calls
     expect(updateBuilder.set).toHaveBeenCalledTimes(4);
     // Both users had their point totals updated (calls 3 and 4)
     expect(updateBuilder.set).toHaveBeenNthCalledWith(3, { points: 1 });
     expect(updateBuilder.set).toHaveBeenNthCalledWith(4, { points: 1 });
+  });
+
+  it('processes only chunkSize matches and reports remaining', async () => {
+    // 3 matches with unscored tips, chunkSize = 2
+    selectQueue.push([
+      { id: 'm1', status: 'completed', homeScore: 1, awayScore: 0 },
+      { id: 'm2', status: 'completed', homeScore: 2, awayScore: 1 },
+      { id: 'm3', status: 'completed', homeScore: 0, awayScore: 0 },
+    ]);
+    // m1 tips + sum
+    selectQueue.push([{ id: 't1', userId: 'u1', matchId: 'm1', predictedHomeScore: 1, predictedAwayScore: 0, pointsEarned: 0 }]);
+    selectQueue.push([{ total: '1' }]);
+    // m2 tips + sum
+    selectQueue.push([{ id: 't2', userId: 'u1', matchId: 'm2', predictedHomeScore: 2, predictedAwayScore: 1, pointsEarned: 0 }]);
+    selectQueue.push([{ total: '4' }]);
+    // m3 tips query (reached before chunk check? No — chunk check runs after unscoredTips check)
+    selectQueue.push([{ id: 't3', userId: 'u1', matchId: 'm3', predictedHomeScore: 0, predictedAwayScore: 0, pointsEarned: 0 }]);
+
+    const result = await scoreCompletedMatches(2);
+
+    expect(result).toEqual({ tipsScored: 2, matchesProcessed: 2, remaining: 1 });
   });
 });
