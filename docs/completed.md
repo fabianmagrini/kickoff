@@ -11,7 +11,7 @@ Items removed from the active backlog, in reverse chronological order.
 - `src/features/scoring/scoring.service.test.ts`: updated all assertions to include `remaining`; added chunking coverage test
 - `src/routes/api/cron/score.ts`: loops `scoreCompletedMatches` until `remaining === 0`, returns accumulated totals
 
-**Shipped:** 2026-06-08 · TBD
+**Shipped:** 2026-06-08 · `1c0fc86`
 
 ---
 
