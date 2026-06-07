@@ -196,6 +196,7 @@ src/
     api/
       auth/$.ts                      # Better Auth catch-all
       cron/score.ts                  # POST /api/cron/score — secured scoring trigger
+      healthz.ts                     # GET /api/healthz — deployment readiness check
   components/
     tip-form.tsx                     # Auth-gated tip submission form (all states)
     route-error.tsx                  # Shared error boundary UI (used by all loader routes)

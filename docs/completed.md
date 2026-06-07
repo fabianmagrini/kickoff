@@ -4,6 +4,16 @@ Items removed from the active backlog, in reverse chronological order.
 
 ---
 
+## Health Endpoint
+`GET /api/healthz` returns `{ ok: true }` with status 200. No auth required. Used by deployment platforms for readiness checks.
+
+- `src/routes/api/healthz.ts`: new route using the same `server.handlers` pattern as the cron endpoint
+- `e2e/healthz.spec.ts`: smoke test verifying status 200 and response body
+
+**Shipped:** 2026-06-08 · TBD
+
+---
+
 ## Insight TTL / Cache Invalidation
 Stale `ai_match_insights` rows (generated before the 24h-before-kickoff window) are now automatically refreshed on the next `getOrGenerate` call. Completed matches are never re-queried.
 
