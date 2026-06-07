@@ -9,28 +9,27 @@ Competitions become a first-class concept — the World Cup is one competition a
 
 - Schema: `competitions`, `user_competition_points` tables; `competitionId` FK on `matches` and `leagues`
 - Migration script: `scripts/migrate-to-competitions.ts` (one-time backfill)
-- Feature module: `src/features/competitions/` (repository, server fn, queries)
+- Feature module: `src/features/competitions/` (repository, server fn, queries, unit tests)
 - Updated: matches, leaderboard, dashboard, leagues, scoring service, insights — all competition-scoped
 - Routes: `/competitions/$id/matches`, `/competitions/$id/leaderboard`, `/competitions/$id/leagues/*`
 - Home page: redirects to active competition or shows selector for multiple
 - Seed script `seed-dev.ts` updated to create/find competition before inserting fixtures
-- 61 unit tests, 47/48 E2E tests passing (1 skip: cached insight requires prior data)
+- 71 unit tests, 47 E2E tests passing (2 skips: cached insight + admin fixme)
 - ADR-0008 documents the key decisions
 
-**Shipped:** 2026-06-07 · (commit pending)
+**Shipped:** 2026-06-07 · `b9b57e5` (feature) + `a75971d` (test gaps)
 
 ---
 
 ## Private Leagues
-Invite-code-based groups with their own scoped leaderboard.
+Invite-code-based groups with their own scoped leaderboard, competition-scoped.
 
-- Schema: `leagues`, `league_members` tables (`src/db/schema.ts`)
+- Schema: `leagues`, `league_members` tables (`src/db/schema.ts`); `competitionId` FK added in multi-competition refactor
 - Repository: `create`, `joinByCode`, `getMyLeagues`, `getById`, `getLeaderboard` (`src/features/leagues/`)
-- Routes: `/leagues` (list + create), `/leagues/$leagueId` (scoped leaderboard), `/leagues/join`
-- Navbar: Leagues link added to `src/routes/__root.tsx`
-- 10 unit tests, 6 E2E tests
+- Routes: `/competitions/$id/leagues/` (list + create), `/competitions/$id/leagues/$leagueId`, `/competitions/$id/leagues/join`
+- 10 unit tests, 5 E2E tests
 
-**Shipped:** 2026-06-07 · `3d5b542`
+**Shipped:** 2026-06-07 · `3d5b542` (initial) · routes updated in `b9b57e5`
 
 ---
 
@@ -40,7 +39,7 @@ Route `/admin` allowing admins to set match scores and status; saving a complete
 - Schema: no changes (uses existing `matches` table)
 - Repository: `updateMatch` (`src/features/admin/admin.repository.ts`)
 - Server fn: `checkIsAdminFn`, `updateMatchFn` — gated by `ADMIN_USER_IDS` env var (`src/features/admin/admin.server.ts`)
-- Route: `src/routes/admin.tsx` — inline edit table for all fixtures
-- 6 unit tests, 2 E2E tests
+- Route: `src/routes/admin.tsx` — competition selector dropdown + inline edit table per competition
+- 6 unit tests, 2 E2E tests (auth boundary); UI interaction requires a real admin user
 
-**Shipped:** 2026-06-05 · `aebdc79`
+**Shipped:** 2026-06-05 · `aebdc79` (initial) · competition selector added in `b9b57e5`

@@ -166,6 +166,7 @@ src/
       admin.server.ts                # thin: checkIsAdminFn, updateMatchFn (ADMIN_USER_IDS guard)
     competitions/
       competitions.repository.ts     # DEEP: getAll(), getById(), getBySlug(), getActive()
+      competitions.repository.test.ts # unit tests (co-located)
       competitions.server.ts         # thin: getCompetitionsFn, getCompetitionFn, getActiveCompetitionsFn
       competitions.queries.ts        # competitionsQueryOptions, competitionQueryOptions, activeCompetitionsQueryOptions
     leagues/
@@ -174,11 +175,10 @@ src/
       leagues.server.ts              # thin: getMyLeaguesFn, getLeagueFn, createLeagueFn, joinLeagueFn (auth-required)
       leagues.queries.ts             # myLeaguesQueryOptions, leagueQueryOptions, leagueLeaderboardQueryOptions
   routes/
-    __root.tsx                       # Root layout + Navbar with auth state (profile link, Leagues link)
-    index.tsx                        # Dashboard (upcoming matches, recent tips, stats)
+    __root.tsx                       # Root layout + Navbar with auth state (profile link, Competitions link)
+    index.tsx                        # Competition selector (redirects to active competition or shows list)
     login.tsx                        # Sign in / Sign up combined page
     profile.tsx                      # Authenticated user profile + full tip history
-    leaderboard.tsx                  # Top 50 users by points
     admin.tsx                        # Admin match score entry with competition selector (admin-gated)
     competitions/
       index.tsx                      # All competitions list
