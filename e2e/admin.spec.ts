@@ -27,3 +27,8 @@ test('authenticated non-admin user sees Forbidden error', async ({ page }) => {
   await expect(page.getByRole('heading', { name: /something went wrong/i })).toBeVisible();
   await expect(page.getByText('Forbidden')).toBeVisible();
 });
+
+// The admin score-entry UI cannot be E2E tested without a real admin user.
+// ADMIN_USER_IDS is a server env var and the test user ID is only known after sign-up.
+// Auth boundary is covered above; repository logic is covered in admin.repository.test.ts.
+test.fixme('admin user sees competition selector and can edit a match score', async () => {});

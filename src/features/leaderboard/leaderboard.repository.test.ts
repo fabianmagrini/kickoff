@@ -35,7 +35,7 @@ describe('leaderboardRepository.getTopN', () => {
 
   it('returns an empty array when no users exist', async () => {
     selectQueue.push([]);
-    expect(await leaderboardRepository.getTopN()).toEqual([]);
+    expect(await leaderboardRepository.getTopN('comp-1')).toEqual([]);
   });
 
   it('returns leaderboard entries in the shape returned by the DB', async () => {
@@ -44,12 +44,12 @@ describe('leaderboardRepository.getTopN', () => {
       { id: 'u2', name: 'Bob', points: 7 },
     ];
     selectQueue.push(rows);
-    expect(await leaderboardRepository.getTopN()).toEqual(rows);
+    expect(await leaderboardRepository.getTopN('comp-1')).toEqual(rows);
   });
 
   it('uses 50 as the default limit', async () => {
     selectQueue.push([{ id: 'u1', name: 'Alice', points: 12 }]);
-    await leaderboardRepository.getTopN();
+    await leaderboardRepository.getTopN('comp-1');
     const { db } = await import('@/db');
     const builder = (db.select as ReturnType<typeof vi.fn>).mock.results[0].value;
     expect(builder.limit).toHaveBeenCalledWith(50);
@@ -58,7 +58,7 @@ describe('leaderboardRepository.getTopN', () => {
   it('passes a custom limit and returns the correct row', async () => {
     const row = { id: 'u1', name: 'Alice', points: 12 };
     selectQueue.push([row]);
-    const result = await leaderboardRepository.getTopN(1);
+    const result = await leaderboardRepository.getTopN('comp-1', 1);
     expect(result).toEqual([row]);
   });
 });

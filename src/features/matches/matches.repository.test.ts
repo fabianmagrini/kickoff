@@ -32,7 +32,7 @@ describe('matchesRepository', () => {
   describe('getAll', () => {
     it('returns empty array when no matches exist', async () => {
       selectQueue.push([]);
-      expect(await matchesRepository.getAll()).toEqual([]);
+      expect(await matchesRepository.getAll('comp-1')).toEqual([]);
     });
 
     it('returns all match rows', async () => {
@@ -41,7 +41,7 @@ describe('matchesRepository', () => {
         { id: 'm2', homeTeam: 'France', awayTeam: 'Spain', status: 'completed' },
       ];
       selectQueue.push(rows);
-      expect(await matchesRepository.getAll()).toEqual(rows);
+      expect(await matchesRepository.getAll('comp-1')).toEqual(rows);
     });
   });
 

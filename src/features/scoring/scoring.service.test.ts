@@ -6,7 +6,7 @@ let selectQueue: unknown[] = [];
 
 function makeBuilder(resolveWith: unknown) {
   const builder: Record<string, unknown> = {};
-  for (const m of ['from', 'where', 'set']) {
+  for (const m of ['from', 'where', 'set', 'innerJoin']) {
     builder[m] = vi.fn(() => builder);
   }
   builder.then = (resolve: (v: unknown) => void) =>
@@ -17,10 +17,17 @@ function makeBuilder(resolveWith: unknown) {
 // update builder is shared but its vi.fn() call history is cleared per test
 const updateBuilder = makeBuilder(undefined);
 
+// insert builder for userCompetitionPoints upserts
+const insertBuilder = {
+  values: vi.fn().mockReturnThis(),
+  onConflictDoUpdate: vi.fn(() => Promise.resolve(undefined)),
+};
+
 vi.mock('@/db', () => ({
   db: {
     select: vi.fn(() => makeBuilder(selectQueue.shift() ?? [])),
     update: vi.fn(() => updateBuilder),
+    insert: vi.fn(() => insertBuilder),
   },
 }));
 
@@ -125,6 +132,37 @@ describe('scoreCompletedMatches', () => {
 
     expect(result).toEqual({ tipsScored: 1, matchesProcessed: 1 });
     expect(updateBuilder.set).toHaveBeenNthCalledWith(2, { points: 0 });
+  });
+
+  it('updates userCompetitionPoints when match has a competitionId', async () => {
+    selectQueue.push([{ id: 'm1', competitionId: 'c1', status: 'completed', homeScore: 2, awayScore: 1 }]);
+    selectQueue.push([
+      { id: 't1', userId: 'u1', matchId: 'm1', predictedHomeScore: 2, predictedAwayScore: 1, pointsEarned: 0 },
+    ]);
+    selectQueue.push([{ total: '3' }]); // global sum
+    selectQueue.push([{ total: '3' }]); // competition-scoped sum
+
+    const result = await scoreCompletedMatches();
+
+    expect(result).toEqual({ tipsScored: 1, matchesProcessed: 1 });
+    // insert upsert fired once for the one affected user
+    expect(insertBuilder.values).toHaveBeenCalledOnce();
+    expect(insertBuilder.values).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: 'u1', competitionId: 'c1', points: 3 }),
+    );
+    expect(insertBuilder.onConflictDoUpdate).toHaveBeenCalledOnce();
+  });
+
+  it('skips userCompetitionPoints upsert when match has no competitionId', async () => {
+    selectQueue.push([{ id: 'm1', status: 'completed', homeScore: 2, awayScore: 1 }]);
+    selectQueue.push([
+      { id: 't1', userId: 'u1', matchId: 'm1', predictedHomeScore: 2, predictedAwayScore: 1, pointsEarned: 0 },
+    ]);
+    selectQueue.push([{ total: '3' }]); // global sum only
+
+    await scoreCompletedMatches();
+
+    expect(insertBuilder.values).not.toHaveBeenCalled();
   });
 
   it('counts matchesProcessed per match, not per tip', async () => {
