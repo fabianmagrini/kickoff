@@ -4,15 +4,20 @@ import { useState } from 'react';
 import { checkIsAdminFn, updateMatchFn } from '@/features/admin/admin.server';
 import { matchesQueryOptions } from '@/features/matches/matches.queries';
 import { competitionsQueryOptions } from '@/features/competitions/competitions.queries';
+import { auditLogQueryOptions } from '@/features/admin/admin.queries';
 import { RouteError } from '@/components/route-error';
 import type { Match } from '@/features/matches/matches.repository';
 import type { Competition } from '@/features/competitions/competitions.repository';
+import type { AuditLogEntry } from '@/features/admin/admin.repository';
 
 export const Route = createFileRoute('/admin')({
   loader: async ({ context: { queryClient } }) => {
     await checkIsAdminFn();
-    const competitions = await queryClient.ensureQueryData(competitionsQueryOptions);
-    return competitions;
+    const [competitions, auditLog] = await Promise.all([
+      queryClient.ensureQueryData(competitionsQueryOptions),
+      queryClient.ensureQueryData(auditLogQueryOptions),
+    ]);
+    return { competitions, auditLog };
   },
   errorComponent: ({ error, reset }) => <RouteError error={error} reset={reset} />,
   component: AdminPage,
@@ -45,6 +50,7 @@ function MatchRow({ match, competitionId }: { match: Match; competitionId: strin
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['matches', competitionId] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'audit-log'] });
       setEditing(false);
     },
   });
@@ -158,12 +164,62 @@ function MatchTable({ competitionId }: { competitionId: string }) {
   );
 }
 
+function scoreStr(home: number | null, away: number | null) {
+  return home !== null && away !== null ? `${home}–${away}` : '–';
+}
+
+function AuditLogTable({ initialData }: { initialData: AuditLogEntry[] }) {
+  const { data: entries = [] } = useQuery({ ...auditLogQueryOptions, initialData });
+
+  if (entries.length === 0) {
+    return (
+      <p className="py-6 text-center text-sm text-muted-foreground">No changes recorded yet.</p>
+    );
+  }
+
+  return (
+    <div className="border rounded-xl overflow-hidden">
+      <table className="w-full">
+        <thead className="bg-muted/50">
+          <tr>
+            <th className="py-2 px-4 text-left text-xs font-medium text-muted-foreground">When</th>
+            <th className="py-2 px-4 text-left text-xs font-medium text-muted-foreground">Match</th>
+            <th className="py-2 px-4 text-left text-xs font-medium text-muted-foreground">Changed by</th>
+            <th className="py-2 px-4 text-left text-xs font-medium text-muted-foreground">Score change</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y">
+          {entries.map((entry) => (
+            <tr key={entry.id} className="border-b last:border-0">
+              <td className="py-3 px-4 text-sm text-muted-foreground whitespace-nowrap">
+                {new Date(entry.changedAt).toLocaleString('en', {
+                  month: 'short', day: 'numeric',
+                  hour: '2-digit', minute: '2-digit',
+                })}
+              </td>
+              <td className="py-3 px-4 text-sm font-medium">
+                {entry.homeTeam} vs {entry.awayTeam}
+              </td>
+              <td className="py-3 px-4 text-sm text-muted-foreground">{entry.userName}</td>
+              <td className="py-3 px-4 text-sm tabular-nums">
+                <span className="text-muted-foreground">{scoreStr(entry.previousHomeScore, entry.previousAwayScore)}</span>
+                <span className="mx-2 text-muted-foreground">→</span>
+                <span className="font-medium">{scoreStr(entry.newHomeScore, entry.newAwayScore)}</span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function AdminPage() {
-  const competitions = Route.useLoaderData();
+  const { competitions, auditLog } = Route.useLoaderData();
   const [selectedId, setSelectedId] = useState<string>(competitions[0]?.id ?? '');
 
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-6">
+    <div className="p-6 max-w-4xl mx-auto space-y-8">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Admin — Match Results</h1>
@@ -185,6 +241,11 @@ function AdminPage() {
       </div>
 
       {selectedId && <MatchTable competitionId={selectedId} />}
+
+      <div className="space-y-3">
+        <h2 className="text-lg font-semibold">Recent Changes</h2>
+        <AuditLogTable initialData={auditLog} />
+      </div>
     </div>
   );
 }

@@ -131,6 +131,22 @@ export const leagueMembers = pgTable('league_members', {
   uniqueIndex('league_members_unique_idx').on(t.leagueId, t.userId),
 ]);
 
+// ─── Admin Audit Log ──────────────────────────────────────────────────────────
+
+export const adminAuditLog = pgTable('admin_audit_log', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  matchId: uuid('match_id').notNull().references(() => matches.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  previousHomeScore: integer('previous_home_score'),
+  previousAwayScore: integer('previous_away_score'),
+  newHomeScore: integer('new_home_score'),
+  newAwayScore: integer('new_away_score'),
+  changedAt: timestamp('changed_at').defaultNow().notNull(),
+}, (t) => [
+  index('admin_audit_log_match_idx').on(t.matchId),
+  index('admin_audit_log_changed_at_idx').on(t.changedAt),
+]);
+
 // ─── AI Insights ──────────────────────────────────────────────────────────────
 
 export const aiMatchInsights = pgTable('ai_match_insights', {

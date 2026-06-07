@@ -4,6 +4,20 @@ Items removed from the active backlog, in reverse chronological order.
 
 ---
 
+## Admin Audit Log
+Score changes made via the admin panel are now recorded in `admin_audit_log`. The "Recent Changes" section on the admin page shows who changed what and when, and updates live after each save.
+
+- `src/db/schema.ts`: new `adminAuditLog` table (`matchId`, `userId`, `previousHomeScore`, `previousAwayScore`, `newHomeScore`, `newAwayScore`, `changedAt`)
+- `drizzle/0000_puzzling_quasar.sql`: migration file generated
+- `src/features/admin/admin.repository.ts`: `updateMatch` now accepts `userId`, fetches current state, inserts audit row before applying update; new `getAuditLog(limit)` method with match + user join
+- `src/features/admin/admin.server.ts`: passes `user.id` from `requireAdmin()` to `updateMatch`; new `getAuditLogFn`
+- `src/features/admin/admin.queries.ts`: `auditLogQueryOptions`
+- `src/routes/admin.tsx`: loads audit log in parallel with competitions; `AuditLogTable` component; invalidates `['admin', 'audit-log']` after each update
+
+**Shipped:** 2026-06-08 · TBD
+
+---
+
 ## Health Endpoint
 `GET /api/healthz` returns `{ ok: true }` with status 200. No auth required. Used by deployment platforms for readiness checks.
 

@@ -80,6 +80,7 @@ Repositories may depend on other repositories (e.g. `insightsRepository` calls `
 - `tips` — user score predictions per match
 - `user_competition_points` — per-competition points tally driving leaderboards (userId + competitionId unique)
 - `ai_match_insights` — cached LLM analysis per match
+- `admin_audit_log` — record of every admin score change (matchId, userId, prev/new scores, changedAt)
 - `leagues` — invite-code-based private groups scoped to a competition
 - `league_members` — join table linking users to leagues
 
@@ -161,9 +162,10 @@ src/
       profile.server.ts              # thin: getProfileFn (auth-required)
       profile.queries.ts             # profileQueryOptions (staleTime: 30s)
     admin/
-      admin.repository.ts            # DEEP: updateMatch() — updates score + triggers re-scoring
+      admin.repository.ts            # DEEP: updateMatch() — fetches current, writes audit log, updates score; getAuditLog()
       admin.repository.test.ts       # unit tests (co-located)
-      admin.server.ts                # thin: checkIsAdminFn, updateMatchFn (ADMIN_USER_IDS guard)
+      admin.server.ts                # thin: checkIsAdminFn, updateMatchFn, getAuditLogFn (ADMIN_USER_IDS guard)
+      admin.queries.ts               # auditLogQueryOptions
     competitions/
       competitions.repository.ts     # DEEP: getAll(), getById(), getBySlug(), getActive()
       competitions.repository.test.ts # unit tests (co-located)

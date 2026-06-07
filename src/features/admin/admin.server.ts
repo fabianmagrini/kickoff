@@ -33,8 +33,15 @@ export const updateMatchFn = createServerFn({ method: 'POST' })
   .inputValidator((data: unknown) => updateMatchSchema.parse(data))
   .handler(({ data }) =>
     logServerFn('updateMatchFn', async () => {
-      await requireAdmin();
+      const user = await requireAdmin();
       const { matchId, ...update } = data;
-      return adminRepository.updateMatch(matchId, update);
+      return adminRepository.updateMatch(matchId, update, user.id);
     }),
   );
+
+/** Returns the 20 most recent admin score changes. Requires admin. */
+export const getAuditLogFn = createServerFn({ method: 'GET' })
+  .handler(() => logServerFn('getAuditLogFn', async () => {
+    await requireAdmin();
+    return adminRepository.getAuditLog();
+  }));
