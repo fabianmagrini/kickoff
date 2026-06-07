@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { matchQueryOptions } from '@/features/matches/matches.queries';
 import { insightQueryOptions } from '@/features/insights/insights.queries';
@@ -50,6 +50,15 @@ function MatchDetail() {
 
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-6">
+      {match.competitionId && (
+        <Link
+          to="/competitions/$competitionId/matches"
+          params={{ competitionId: match.competitionId }}
+          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          ← Fixtures
+        </Link>
+      )}
       {/* Match header */}
       <div className="border rounded-xl p-6">
         <div className="flex justify-between items-center text-2xl font-bold mb-2">
