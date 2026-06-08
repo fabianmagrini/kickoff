@@ -23,3 +23,12 @@ test('GET /api/cron/score with wrong Bearer token returns 401', async ({ request
   });
   expect(response.status()).toBe(401);
 });
+
+test('GET /api/cron/score with correct Bearer token returns 200', async ({ request }) => {
+  const secret = process.env.CRON_SECRET;
+  if (!secret) return; // skip if CRON_SECRET not set in test environment
+  const response = await request.get('/api/cron/score', {
+    headers: { authorization: `Bearer ${secret}` },
+  });
+  expect(response.status()).toBe(200);
+});

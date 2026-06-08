@@ -19,8 +19,9 @@ export const Route = createFileRoute('/api/cron/score')({
     handlers: {
       // POST: manual trigger or external cron — validates x-cron-secret header
       POST: async ({ request }: { request: Request }) => {
+        const cronSecret = process.env.CRON_SECRET?.trim();
         const secret = request.headers.get('x-cron-secret');
-        if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
+        if (!cronSecret || secret !== cronSecret) {
           return new Response('Unauthorized', { status: 401 });
         }
         return runScoring();
@@ -28,8 +29,9 @@ export const Route = createFileRoute('/api/cron/score')({
 
       // GET: Vercel Cron runner — validates Authorization: Bearer <CRON_SECRET>
       GET: async ({ request }: { request: Request }) => {
+        const cronSecret = process.env.CRON_SECRET?.trim();
         const auth = request.headers.get('authorization');
-        if (!process.env.CRON_SECRET || auth !== `Bearer ${process.env.CRON_SECRET}`) {
+        if (!cronSecret || auth !== `Bearer ${cronSecret}`) {
           return new Response('Unauthorized', { status: 401 });
         }
         return runScoring();
