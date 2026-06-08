@@ -87,6 +87,88 @@ npm run db:seed:dev    # Seed 72 group stage fixtures (dev)
 npm run db:seed        # Seed fixtures from API-Football (production)
 ```
 
+## Deploying to Vercel
+
+### 1. Connect repository
+
+In the Vercel dashboard → **Add New Project** → import `fabianmagrini/kickoff`. Use these settings:
+
+| Setting | Value |
+|---|---|
+| Framework Preset | **Other** |
+| Build Command | `npm run build` |
+| Output Directory | `.output/public` |
+| Install Command | `npm ci` |
+
+### 2. Set environment variables
+
+Add all of the following in **Project Settings → Environment Variables** before the first deploy:
+
+| Variable | Notes |
+|---|---|
+| `DATABASE_URL` | Neon connection string (production branch) |
+| `BETTER_AUTH_SECRET` | 32+ char random string — never reuse the dev value |
+| `BETTER_AUTH_URL` | Your production URL, e.g. `https://kickoff.vercel.app` |
+| `CRON_SECRET` | 32+ char random string — Vercel Cron sends this as `Authorization: Bearer <value>` |
+| `ADMIN_USER_IDS` | Leave blank initially; fill in after first login (see step 5) |
+| `GOOGLE_GENERATIVE_AI_API_KEY` | Or set `AI_PROVIDER=openai` + `OPENAI_API_KEY` |
+| `AI_PROVIDER` | `google` (default) or `openai` |
+| `AI_MODEL` | Optional — overrides the default model ID |
+| `LOG_LEVEL` | `warn` recommended for production |
+| `GITHUB_CLIENT_ID/SECRET` | GitHub OAuth — omit to disable |
+| `GOOGLE_CLIENT_ID/SECRET` | Google OAuth — omit to disable |
+
+### 3. Deploy
+
+Click **Deploy**. Vercel runs `npm run build`, which uses the Nitro Vercel preset to bundle the SSR server into `.vercel/output/`. The cron job defined in `vercel.json` is automatically registered.
+
+### 4. Run the database migration
+
+From your local machine with the production `DATABASE_URL`:
+
+```bash
+DATABASE_URL=<prod-url> npm run db:migrate
+```
+
+Then seed fixtures:
+
+```bash
+DATABASE_URL=<prod-url> npm run db:seed:dev   # 72 group stage matches
+# or
+DATABASE_URL=<prod-url> npm run db:seed       # all 104 matches (requires API_FOOTBALL_KEY)
+```
+
+### 5. Set ADMIN_USER_IDS
+
+Sign up in the deployed app, then find your user ID:
+
+```sql
+SELECT id, email FROM "user";
+```
+
+Add the ID to `ADMIN_USER_IDS` in Vercel's environment variables (comma-separated if multiple admins), then **redeploy** or trigger a new build for the change to take effect.
+
+### 6. Update OAuth callback URLs (if using OAuth)
+
+In GitHub / Google developer consoles, add your production URL as an allowed callback:
+
+```
+https://kickoff.vercel.app/api/auth/callback/github
+https://kickoff.vercel.app/api/auth/callback/google
+```
+
+### Cron job
+
+`vercel.json` schedules `GET /api/cron/score` every 10 minutes. Vercel authenticates the call by sending `Authorization: Bearer <CRON_SECRET>`. You can also trigger scoring manually:
+
+```bash
+# POST handler — for manual triggers and non-Vercel schedulers
+curl -X POST https://kickoff.vercel.app/api/cron/score \
+  -H "x-cron-secret: $CRON_SECRET"
+```
+
+---
+
 ## Architecture
 
 The codebase uses **deep modules** (Ousterhout) — simple interfaces hiding implementation complexity.

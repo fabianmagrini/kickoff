@@ -316,9 +316,12 @@ No Docker required — Neon is always remote. The `--env-file=.env` flag on seed
 ### Build
 
 ```bash
-npm run build    # Rolldown bundles client (dist/client/) + server (dist/server/)
-npm run start    # node .output/server/index.mjs
+npm run build    # Nitro bundles SSR server → .output/server/index.mjs (local)
+                 # On Vercel (VERCEL=1) preset switches to vercel → .vercel/output/
+npm run start    # node .output/server/index.mjs  (local production test)
 ```
+
+The build uses the **Nitro Vite plugin** (`nitro/vite`), which wraps the TanStack Start server bundle in a Nitro server with preset-aware output. `kysely` is externalized to avoid rolldown bundling better-auth's SQLite dialects (dead code — the app uses Neon, not SQLite).
 
 ### Secrets
 
@@ -340,6 +343,18 @@ All secrets live in `.env` (gitignored):
 ### CI/CD
 
 `.github/workflows/ci.yml` runs `npm run test` (Vitest unit tests) and `npm run build` on every PR and push to `main`. No secrets required — unit tests mock the DB and the build uses an existing Neon fallback URL. E2E tests are excluded until a preview deployment is available.
+
+### Vercel Deployment
+
+The repository is connected to Vercel. Every push to `main` triggers a production deploy. Vercel runs `npm run build` with `VERCEL=1` set, which activates the Nitro `vercel` preset and writes the build to `.vercel/output/` (the [Vercel Build Output API](https://vercel.com/docs/build-output-api/v3) format).
+
+**Cron:** `vercel.json` schedules `GET /api/cron/score` every 10 minutes. Vercel authenticates the call by sending `Authorization: Bearer <CRON_SECRET>`. The endpoint also accepts `POST` with an `x-cron-secret` header for manual triggers.
+
+**First-deploy checklist** (one-time):
+1. Run `npm run db:migrate` with the production `DATABASE_URL` to apply `drizzle/0000_puzzling_quasar.sql`
+2. Seed fixtures: `npm run db:seed:dev` (group stage) or `npm run db:seed` (full 104 matches)
+3. Sign up, copy your user ID from the `user` table, set `ADMIN_USER_IDS` in Vercel, redeploy
+4. If using OAuth: add `https://<domain>/api/auth/callback/github` and `/google` to your OAuth app settings
 
 ---
 
