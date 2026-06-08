@@ -100,8 +100,8 @@ See `.env.example`. Required: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH
 
 ```bash
 npm run dev            # Start dev server
-npm run build          # Production build
-npm run start          # Start production server
+npm run build          # Production build → .output/ (node-server) or .vercel/output/ (on Vercel)
+npm run start          # Start production server (node .output/server/index.mjs)
 npm run test           # Run unit tests (Vitest)
 npm run test:watch     # Watch mode
 npm run test:e2e       # Run E2E tests (Playwright, requires dev server)
@@ -201,6 +201,7 @@ src/
       auth/$.ts                      # Better Auth catch-all
       cron/score.ts                  # POST /api/cron/score — secured scoring trigger
       healthz.ts                     # GET /api/healthz — deployment readiness check
+vercel.json                            # Vercel cron schedule (POST /api/cron/score every 10 min)
   components/
     tip-form.tsx                     # Auth-gated tip submission form (all states)
     route-error.tsx                  # Shared error boundary UI (used by all loader routes)
