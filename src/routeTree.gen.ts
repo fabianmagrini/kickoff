@@ -15,6 +15,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CompetitionsIndexRouteImport } from './routes/competitions/index'
 import { Route as MatchesMatchIdRouteImport } from './routes/matches/$matchId'
+import { Route as ApiHealthzRouteImport } from './routes/api/healthz'
 import { Route as CompetitionsCompetitionIdIndexRouteImport } from './routes/competitions/$competitionId/index'
 import { Route as CompetitionsCompetitionIdLeaderboardRouteImport } from './routes/competitions/$competitionId/leaderboard'
 import { Route as ApiCronScoreRouteImport } from './routes/api/cron/score'
@@ -52,6 +53,11 @@ const CompetitionsIndexRoute = CompetitionsIndexRouteImport.update({
 const MatchesMatchIdRoute = MatchesMatchIdRouteImport.update({
   id: '/matches/$matchId',
   path: '/matches/$matchId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHealthzRoute = ApiHealthzRouteImport.update({
+  id: '/api/healthz',
+  path: '/api/healthz',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CompetitionsCompetitionIdIndexRoute =
@@ -106,6 +112,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
+  '/api/healthz': typeof ApiHealthzRoute
   '/matches/$matchId': typeof MatchesMatchIdRoute
   '/competitions/': typeof CompetitionsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -122,6 +129,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
+  '/api/healthz': typeof ApiHealthzRoute
   '/matches/$matchId': typeof MatchesMatchIdRoute
   '/competitions': typeof CompetitionsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -139,6 +147,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
+  '/api/healthz': typeof ApiHealthzRoute
   '/matches/$matchId': typeof MatchesMatchIdRoute
   '/competitions/': typeof CompetitionsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -157,6 +166,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/login'
     | '/profile'
+    | '/api/healthz'
     | '/matches/$matchId'
     | '/competitions/'
     | '/api/auth/$'
@@ -173,6 +183,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/login'
     | '/profile'
+    | '/api/healthz'
     | '/matches/$matchId'
     | '/competitions'
     | '/api/auth/$'
@@ -189,6 +200,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/login'
     | '/profile'
+    | '/api/healthz'
     | '/matches/$matchId'
     | '/competitions/'
     | '/api/auth/$'
@@ -206,6 +218,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   LoginRoute: typeof LoginRoute
   ProfileRoute: typeof ProfileRoute
+  ApiHealthzRoute: typeof ApiHealthzRoute
   MatchesMatchIdRoute: typeof MatchesMatchIdRoute
   CompetitionsIndexRoute: typeof CompetitionsIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
@@ -260,6 +273,13 @@ declare module '@tanstack/react-router' {
       path: '/matches/$matchId'
       fullPath: '/matches/$matchId'
       preLoaderRoute: typeof MatchesMatchIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/healthz': {
+      id: '/api/healthz'
+      path: '/api/healthz'
+      fullPath: '/api/healthz'
+      preLoaderRoute: typeof ApiHealthzRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/competitions/$competitionId/': {
@@ -326,6 +346,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   LoginRoute: LoginRoute,
   ProfileRoute: ProfileRoute,
+  ApiHealthzRoute: ApiHealthzRoute,
   MatchesMatchIdRoute: MatchesMatchIdRoute,
   CompetitionsIndexRoute: CompetitionsIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
