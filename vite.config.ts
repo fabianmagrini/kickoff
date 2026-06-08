@@ -21,11 +21,6 @@ export default defineConfig({
     // Locally it uses the node-server preset → .output/server/index.mjs.
     nitro({
       preset: process.env.VERCEL ? 'vercel' : 'node-server',
-      // better-auth's SQLite dialects import kysely constants that moved to
-      // kysely/migration in 0.29.x. We use Neon so SQLite is dead code — skip bundling.
-      rollupConfig: {
-        external: (id: string) => id === 'kysely' || id.startsWith('kysely/'),
-      },
     }),
     viteReact(),
   ],
@@ -33,14 +28,14 @@ export default defineConfig({
     port: 5173,
     strictPort: true, // fail fast instead of silently incrementing to 5174, 5175…
   },
-  ssr: {
-    // better-auth's SQLite dialects import kysely constants not on the main export
-    // in 0.29.x; we use Neon so SQLite code is dead — externalize to skip bundling.
-    external: ['kysely'],
-  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      // kysely 0.29.x removed DEFAULT_MIGRATION_TABLE/LOCK from its main entry.
+      // better-auth's SQLite dialects still import them from 'kysely' (dead code
+      // for us — we use Neon). This shim re-exports the full kysely surface plus
+      // the two missing constants so the nitro bundle compiles and runs correctly.
+      'kysely': path.resolve(__dirname, './src/lib/kysely-shim.js'),
     },
   },
 });
