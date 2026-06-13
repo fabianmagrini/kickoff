@@ -4,6 +4,20 @@ Items removed from the active backlog, in reverse chronological order.
 
 ---
 
+## Vercel Deployment Hardening (5 fixes)
+Five issues found in a deployment review and fixed in one pass.
+
+- `src/auth/auth.ts`: conditionally include GitHub/Google social providers only when env vars are present — prevents startup crash on deployments without OAuth configured
+- `src/routes/api/healthz.ts`: added `SELECT 1` DB probe; returns 503 when Neon is unreachable instead of always returning 200
+- `src/routes/api/cron/score.ts`: scoring loop now exits after 270s to stay within Vercel's 300s function limit; `remaining` is returned in the response so partial runs are visible
+- `vercel.json`: added `maxDuration: 300` for the cron function
+- `.github/workflows/ci.yml`: added `e2e` job (runs after build, uploads Playwright report as artifact)
+- `CLAUDE.md`: updated stale vercel.json project structure comment
+
+**Shipped:** 2026-06-13 · (next commit)
+
+---
+
 ## Code Review: 8 Correctness Fixes
 A high-effort code review surfaced and fixed 8 bugs across the infrastructure hardening commits.
 

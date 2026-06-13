@@ -201,7 +201,7 @@ src/
       auth/$.ts                      # Better Auth catch-all
       cron/score.ts                  # POST /api/cron/score — secured scoring trigger
       healthz.ts                     # GET /api/healthz — deployment readiness check
-vercel.json                            # Vercel cron schedule (POST /api/cron/score every 10 min)
+vercel.json                            # Vercel cron schedule (POST /api/cron/score hourly) + maxDuration 300s
   components/
     tip-form.tsx                     # Auth-gated tip submission form (all states)
     route-error.tsx                  # Shared error boundary UI (used by all loader routes)

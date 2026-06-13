@@ -1,16 +1,22 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { scoreCompletedMatches } from '@/features/scoring/scoring.service';
 
+// Leave 10s headroom before Vercel's 300s pro function limit.
+const SCORING_DEADLINE_MS = 270_000;
+
 async function runScoring() {
+  const deadline = Date.now() + SCORING_DEADLINE_MS;
   let tipsScored = 0;
   let matchesProcessed = 0;
+  let remaining = 0;
   let result;
   do {
     result = await scoreCompletedMatches();
     tipsScored += result.tipsScored;
     matchesProcessed += result.matchesProcessed;
-  } while (result.remaining > 0);
-  return Response.json({ tipsScored, matchesProcessed, remaining: 0 });
+    remaining = result.remaining;
+  } while (result.remaining > 0 && Date.now() < deadline);
+  return Response.json({ tipsScored, matchesProcessed, remaining });
 }
 
 export const Route = createFileRoute('/api/cron/score')({
