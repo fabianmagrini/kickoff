@@ -31,11 +31,6 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      // kysely 0.29.x removed DEFAULT_MIGRATION_TABLE/LOCK from its main entry.
-      // better-auth's SQLite dialects still import them from 'kysely' (dead code
-      // for us — we use Neon). This shim re-exports the full kysely surface plus
-      // the two missing constants so the nitro bundle compiles and runs correctly.
-      'kysely': path.resolve(__dirname, './src/lib/kysely-shim.js'),
     },
   },
 });
