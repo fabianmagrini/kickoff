@@ -140,13 +140,13 @@ DATABASE_URL=<prod-url> npm run db:seed       # all 104 matches (requires API_FO
 
 ### 5. Set ADMIN_USER_IDS
 
-Sign up in the deployed app, then find your user ID:
+Sign up in the deployed app, then find your user ID — the easiest way is to visit `/profile` while logged in. Alternatively, query the database directly:
 
 ```sql
 SELECT id, email FROM "user";
 ```
 
-Add the ID to `ADMIN_USER_IDS` in Vercel's environment variables (comma-separated if multiple admins), then **redeploy** or trigger a new build for the change to take effect.
+Add the ID to `ADMIN_USER_IDS` in Vercel's environment variables (comma-separated if multiple admins), then **redeploy** for the change to take effect.
 
 ### 6. Update OAuth callback URLs (if using OAuth)
 
